@@ -47,7 +47,7 @@ winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
 
 attackPositions :: [Position]
-attackPositions = [(cellWidth * 0.25, cellHeight * 1.2), (cellWidth * 1.25, cellHeight * 1.2), (cellWidth * 0.25, cellHeight * 0.2), (cellWidth * 1.25, cellHeight * 0.2)]
+attackPositions = [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
 
 pokemonTypeColor :: PokemonType -> Color
 pokemonTypeColor Normal = greyN 0.5
@@ -119,8 +119,16 @@ boardGrid =
             ]
     ]
 
+attackString :: Int -> String -> String
+attackString movCount attName = show movCount ++ "-" ++ attName
+
 renderPokemonAttack :: PokemonAttack -> Position -> Picture
-renderPokemonAttack pokemonAttack pos = uncurry translate pos (uncurry scale attackTextScale (color (pokemonTypeColor (pokType pokemonAttack))  (Text  (attackName pokemonAttack))))
+renderPokemonAttack pokemonAttack pos =
+  let
+    movCount = movsLeft pokemonAttack
+    attName = attackName pokemonAttack
+  in
+  uncurry translate pos (uncurry scale attackTextScale (color (pokemonTypeColor (pokType pokemonAttack))  (Text (attackString movCount attName))))
 
 -- Translate te pone el pixel abajo
 -- IMPORTANTE primero escalar y despues traducir
