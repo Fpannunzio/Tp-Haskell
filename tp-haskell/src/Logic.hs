@@ -5,7 +5,7 @@ import Data.Foldable ( asum )
 
 import Graphics.Gloss.Interface.Pure.Game
 import Game
-import Types 
+import Types
 
 toPositive :: Int -> Int
 toPositive x
@@ -18,11 +18,11 @@ processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
     bpa = base pokemonAttack
     pokemonAD= attack attackingPokemonStats
     -- critChance = crit attackingPokemonStats
-    defensivePS = ps defensivePokemonStats
+    defensivePS = currentPs defensivePokemonStats
     pokemonDefense = defense defensivePokemonStats
   in
     defensivePokemonStats {
-      ps = defensivePS - toPositive(pokemonDefense - (bpa * pokemonAD))
+      currentPs = defensivePS - toPositive(pokemonDefense - (bpa * pokemonAD))
     }
 
 processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
@@ -31,11 +31,11 @@ processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
     bpa = base pokemonAttack
     pokemonAP = spAttack attackingPokemonStats
     -- critChance = crit attackingPokemonStats
-    defensivePS = ps defensivePokemonStats
+    defensivePS = currentPs defensivePokemonStats
     pokemonSpDefense = spDefense defensivePokemonStats
   in
     defensivePokemonStats {
-      ps = defensivePS - toPositive(pokemonSpDefense - (bpa * pokemonAP))
+      currentPs = defensivePS - toPositive(pokemonSpDefense - (bpa * pokemonAP))
     }
 
 processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
@@ -47,7 +47,7 @@ processAttack ap dp pa =
     case attackType pa of
       Physic ->  dp { stats = processPhysicAttack apStats dpStats pa }
       Special ->  dp { stats = processSpecialAttack apStats dpStats pa }
-   
+
 -- Actualizo a los dos equipos
 fight :: Pokemon -> Pokemon -> PokemonAttack -> PokemonAttack -> Game -> Game
 fight ap gp apAttack gpAttack game =
@@ -67,17 +67,17 @@ checkPlayerWon _ _ _ _ game = game
 -- Fijarse si alguna de las dos colecciones es vacias y en caso de serlo poner gameState en gameOver
 checkStillFighting :: Game -> Game
 checkStillFighting game =
-    let 
+    let
       at = ashTeam game
       gt = garyTeam game
     in
     case firstPlayer game of
       Ash -> checkPlayerWon at gt Ash Gary game
       Gary -> checkPlayerWon gt at Gary Ash game
-   
+
 
 checkPokemonPs :: Pokemon -> Bool
-checkPokemonPs pokemon = ps (stats pokemon) == 0x0
+checkPokemonPs pokemon = currentPs (stats pokemon) == 0x0
 
 swapAshPokemon :: Game -> Game
 swapAshPokemon game
@@ -112,8 +112,8 @@ fightPokemon game attackNumber =
     let
       ashPokemon = head (ashTeam game)
       garyPokemon = head (garyTeam game)
-      apAttack = movs ashPokemon !! 1
-      gpAttack = movs ashPokemon !! 1
+      apAttack = head (movs ashPokemon) --TODO cambiar al numero del ataque
+      gpAttack = head (movs ashPokemon)
     in
       checkStillFighting $
       swapDefetedPokemon $

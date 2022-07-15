@@ -6,15 +6,16 @@ type Board = Array (Int, Int) String -- Quiero celdas que tengan los ataques
 
 data PokemonType = Fuego | Agua | Hierba deriving (Eq, Show)
 
-data PokemonStatistics = PokemonStatistics 
-  { pokemonType :: PokemonType,  
-    ps :: Int , 
-    attack :: Int, 
-    defense :: Int, 
-    spAttack :: Int, 
-    spDefense :: Int, 
-    speed :: Int, 
-    crit :: Double 
+data PokemonStatistics = PokemonStatistics
+  { pokemonType :: PokemonType,
+    maxPs :: Int ,
+    currentPs :: Int,
+    attack :: Int,
+    defense :: Int,
+    spAttack :: Int,
+    spDefense :: Int,
+    speed :: Int,
+    crit :: Double
   } deriving (Eq, Show)
 
 data AttackType = Physic | Special deriving (Eq, Show)
@@ -37,20 +38,23 @@ type Cell = String
 
 data State = Running | Fighting | GameOver Player deriving (Eq, Show)
 
+intToFloat :: Int -> Float
+intToFloat number = fromIntegral number :: Float
+
 generatePokemonTeamP :: Int -> PokemonTeam
 generatePokemonTeamP 0 = []
-generatePokemonTeamP n = 
+generatePokemonTeamP n =
   Pokemon {
-    name = "Charmander" 
-  , stats = PokemonStatistics {pokemonType = Fuego, ps = 20, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
-  , movs = [PokemonAttack {attackName = "Placaje", base = 25, attackType = Physic}] 
+    name = "Charmander"
+  , stats = PokemonStatistics {pokemonType = Fuego, maxPs = 20, currentPs = 20, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , movs = [PokemonAttack {attackName = "Placaje", base = 25, attackType = Physic}]
   } : generatePokemonTeamP(n-1)
 
 generatePokemonTeamC :: Int -> PokemonTeam
 generatePokemonTeamC 0 = []
-generatePokemonTeamC n = 
+generatePokemonTeamC n =
   Pokemon {
     name = "Squirtle"
-  , stats = PokemonStatistics {pokemonType = Agua, ps = 20, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
-  , movs = [PokemonAttack {attackName = "Placaje", base = 25, attackType = Physic}] 
+  , stats = PokemonStatistics {pokemonType = Agua, maxPs = 20, currentPs = 20, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , movs = [PokemonAttack {attackName = "Placaje", base = 25, attackType = Physic}]
   } : generatePokemonTeamC(n-1)
