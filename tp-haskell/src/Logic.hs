@@ -8,58 +8,6 @@ import Game
 import Types
 
 
-toPositive :: Int -> Int
-toPositive x
-  | x > 0 = x
-  | otherwise = 0
-
-attackFormula :: Int -> Int -> Int -> Int
-attackFormula attack defense attackDmg = toPositive (floor ((intToFloat(attackDmg * attack) / intToFloat defense) / 5.0))
-
-processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
-processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
-  let
-    bpa = base pokemonAttack
-    pokemonAD= attack attackingPokemonStats
-    -- critChance = crit attackingPokemonStats
-    defensivePS = currentPs defensivePokemonStats
-    pokemonDefense = defense defensivePokemonStats
-  in
-    defensivePokemonStats {
-      currentPs = toPositive (defensivePS - attackFormula pokemonAD pokemonDefense bpa)
-    }
-
-processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
-processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
-  let
-    bpa = base pokemonAttack
-    pokemonAP = spAttack attackingPokemonStats
-    -- critChance = crit attackingPokemonStats
-    defensivePS = currentPs defensivePokemonStats
-    pokemonSpDefense = spDefense defensivePokemonStats
-  in
-    defensivePokemonStats {
-      currentPs = toPositive (defensivePS - attackFormula pokemonAP pokemonSpDefense bpa)
-    }
-
-processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
-processAttack ap dp pa =
-  let
-    apStats = stats ap
-    dpStats = stats dp
-  in
-    case attackType pa of
-      Physic ->  dp { stats = processPhysicAttack apStats dpStats pa }
-      Special ->  dp { stats = processSpecialAttack apStats dpStats pa }
-
--- Actualizo a los dos equipos
-fight :: Pokemon -> Pokemon -> PokemonAttack -> PokemonAttack -> Game -> Game
-fight ap gp apAttack gpAttack game =
-  game {
-    ashTeam = processAttack ap gp apAttack : tail (ashTeam game),
-    garyTeam = processAttack gp ap gpAttack : tail (garyTeam game)
-}
-
 -- Si el segundo equipo es vacio siempre gana el primer jugador
 -- Si el primero era vacio y no sali por el primer caso es que el segundo no lo es, gana el segundo jugador
 -- Sino sigue igual
@@ -103,6 +51,58 @@ swapDefetedPokemon game
       ashRemaingPokemons = tail (ashTeam game)
       garyRemaingPokemons = tail (garyTeam game)
 
+toPositive :: Int -> Int
+toPositive x
+  | x > 0 = x
+  | otherwise = 0
+
+attackFormula :: Int -> Int -> Int -> Int
+attackFormula attack defense attackDmg = toPositive (floor ((intToFloat(attackDmg * attack) / intToFloat defense) / 5.0))
+
+processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
+processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
+  let
+    bpa = base pokemonAttack
+    pokemonAD= attack attackingPokemonStats
+    -- critChance = crit attackingPokemonStats
+    defensivePS = currentPs defensivePokemonStats
+    pokemonDefense = defense defensivePokemonStats
+  in
+    defensivePokemonStats {
+      currentPs = toPositive (defensivePS - attackFormula pokemonAD pokemonDefense bpa)
+    }
+
+processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
+processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
+  let
+    bpa = base pokemonAttack
+    pokemonAP = spAttack attackingPokemonStats
+    -- critChance = crit attackingPokemonStats
+    defensivePS = currentPs defensivePokemonStats
+    pokemonSpDefense = spDefense defensivePokemonStats
+  in
+    defensivePokemonStats {
+      currentPs = toPositive (defensivePS - attackFormula pokemonAP pokemonSpDefense bpa)
+    }
+
+processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
+processAttack attackingPokemon defendingPokemon pokemonAttack =
+  let
+    apStats = stats attackingPokemon
+    dpStats = stats defendingPokemon
+  in
+    case attackType pokemonAttack of
+      Physic ->  defendingPokemon { stats = processPhysicAttack apStats dpStats pokemonAttack }
+      Special ->  defendingPokemon { stats = processSpecialAttack apStats dpStats pokemonAttack }
+
+-- Actualizo a los dos equipos
+fight :: Pokemon -> Pokemon -> PokemonAttack -> PokemonAttack -> Game -> Game
+fight ashPokemon garyPokemon apAttack gpAttack game =
+  game {
+    ashTeam =  processAttack garyPokemon ashPokemon gpAttack : tail (ashTeam game), --Se lee, el pokemon de Gary ataca al pokemon de ash con el ataque gpAttack
+    garyTeam = processAttack ashPokemon garyPokemon apAttack : tail (garyTeam game)
+}
+
 checkFirstAttack :: Pokemon -> Pokemon -> Game -> Game
 checkFirstAttack ashPokemon garyPokemon game
     | ashSpeed > garySpeed = game { firstPlayer = Ash }
@@ -116,8 +116,8 @@ fightPokemon game attackNumber =
     let
       ashPokemon = head (ashTeam game)
       garyPokemon = head (garyTeam game)
-      apAttack = (movs ashPokemon) !! attackNumber --TODO cambiar al numero del ataque
-      gpAttack = (movs ashPokemon) !! attackNumber
+      apAttack = movs ashPokemon !! attackNumber 
+      gpAttack = movs ashPokemon !! attackNumber --TODO Hacer que sea un numero random
     in
       checkStillFighting $
       swapDefetedPokemon $
@@ -140,7 +140,7 @@ cellCordToAttack cellCord =
 playerTurn :: Game -> (Int, Int) -> Game
 playerTurn game cellCoord
     | isCoordCorrect attackNumber = fightPokemon game attackNumber
-    | otherwise = game 
+    | otherwise = game
     where attackNumber = cellCordToAttack cellCoord
 
 
