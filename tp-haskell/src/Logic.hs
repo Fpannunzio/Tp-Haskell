@@ -116,8 +116,8 @@ fightPokemon game attackNumber =
     let
       ashPokemon = head (ashTeam game)
       garyPokemon = head (garyTeam game)
-      apAttack = head (movs ashPokemon) --TODO cambiar al numero del ataque
-      gpAttack = head (movs ashPokemon)
+      apAttack = (movs ashPokemon) !! attackNumber --TODO cambiar al numero del ataque
+      gpAttack = (movs ashPokemon) !! attackNumber
     in
       checkStillFighting $
       swapDefetedPokemon $
@@ -129,27 +129,28 @@ isCoordCorrect = inRange (0, 3)
 cellCordToAttack :: (Int, Int) -> Int
 cellCordToAttack cellCord =
   case cellCord of
-    (0, 0) -> 0
-    (0, 1) -> 1
-    (1, 0) -> 2
-    (1, 1) -> 3
+    (0, 1) -> 0
+    (1, 1) -> 1
+    (0, 0) -> 2
+    (1, 0) -> 3
+    _ -> 4
+
+
 
 playerTurn :: Game -> (Int, Int) -> Game
 playerTurn game cellCoord
     | isCoordCorrect attackNumber = fightPokemon game attackNumber
-    | otherwise = game
+    | otherwise = game 
     where attackNumber = cellCordToAttack cellCoord
 
 
 mousePosAsCellCoord :: (Float, Float) -> (Int, Int)
-mousePosAsCellCoord (x, y) = ( floor ((y + (fromIntegral screenHeight * 0.5)) / cellHeight)
-                             , floor ((x + (fromIntegral screenWidth * 0.5)) / cellWidth)
-                             )
+mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / cellWidth),
+                              floor ((y + (fromIntegral screenHeight * 0.5)) / cellHeight))
 
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
       -- Running -> playerTurn game $ mousePosAsCellCoord mousePos
-      Running -> playerTurn game (0,0)
-      Fighting -> initialGame
+      Running -> playerTurn game (mousePosAsCellCoord mousePos)
       GameOver _ -> initialGame
 transformGame _ game = game
