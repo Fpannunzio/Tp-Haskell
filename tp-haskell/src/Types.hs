@@ -53,10 +53,10 @@ generatePokemonTeamP n =
     name = "Charmander"
   , stats = PokemonStatistics {pokemonType = Fuego, maxPs = 25, currentPs = 25, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
   , movs = [
-    PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
-  , PokemonAttack {attackName = "Ascuas", base = 25, pokType = Fuego, attackType = Special, movsLeft = 10}
+    PokemonAttack {attackName = "Placaje", base = 250, pokType = Normal, attackType = Physic, movsLeft = 10}
+  , PokemonAttack {attackName = "Ascuas", base = 20, pokType = Fuego, attackType = Special, movsLeft = 10}
   , PokemonAttack {attackName = "Burbuja", base = 35, pokType = Agua, attackType = Physic, movsLeft = 5}
-  , PokemonAttack {attackName = "Latigo", base = 25, pokType = Hierba, attackType = Physic, movsLeft = 10}]
+  , PokemonAttack {attackName = "Latigo", base = 15, pokType = Hierba, attackType = Physic, movsLeft = 10}]
   } : generatePokemonTeamP(n-1)
 
 generatePokemonTeamC :: Int -> PokemonTeam
@@ -67,7 +67,7 @@ generatePokemonTeamC n =
   , stats = PokemonStatistics {pokemonType = Agua, maxPs = 25, currentPs = 25, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
   , movs = [
     PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
-  , PokemonAttack {attackName = "Burbuja", base = 25, pokType = Agua, attackType = Special, movsLeft = 10}
+  , PokemonAttack {attackName = "Burbuja", base = 20, pokType = Agua, attackType = Special, movsLeft = 10}
   , PokemonAttack {attackName = "Mordida", base = 35, pokType = Normal, attackType = Physic, movsLeft = 5}
-  , PokemonAttack {attackName = "Golpe", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}]
+  , PokemonAttack {attackName = "Golpe", base = 15, pokType = Normal, attackType = Physic, movsLeft = 10}]
   }: generatePokemonTeamC(n-1)

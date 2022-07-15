@@ -24,14 +24,11 @@ screenWidth = 640
 screenHeight :: Int
 screenHeight = 480
 
-halfScreenHeight :: Int
-halfScreenHeight = 480
-
 cellWidth :: Float
 cellWidth = fromIntegral screenWidth / fromIntegral n
 
 cellHeight :: Float
-cellHeight = fromIntegral halfScreenHeight / fromIntegral n
+cellHeight = fromIntegral screenHeight / (fromIntegral n * 2.0)
 
 initialGame :: Game
 initialGame = Game { gameBoard = array indexRange $ zip (range indexRange) (repeat "Ataque") --Aca voy a tener que escribir los nombres de los ataques (Como hacer esto a partir de los pokemones)

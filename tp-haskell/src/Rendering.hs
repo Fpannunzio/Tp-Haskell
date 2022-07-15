@@ -47,7 +47,7 @@ winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
 
 attackPositions :: [Position]
-attackPositions = [(cellWidth * 0.25, cellHeight * 0.7), (cellWidth * 1.25, cellHeight * 0.7), (cellWidth * 0.25, cellHeight * 0.2), (cellWidth * 1.25, cellHeight * 0.2)]
+attackPositions = [(cellWidth * 0.25, cellHeight * 1.2), (cellWidth * 1.25, cellHeight * 1.2), (cellWidth * 0.25, cellHeight * 0.2), (cellWidth * 1.25, cellHeight * 0.2)]
 
 pokemonTypeColor :: PokemonType -> Color
 pokemonTypeColor Normal = greyN 0.5
@@ -74,7 +74,7 @@ renderPokemonName position currentColor name =
     $ text name
 
 calculateLifeBarLength :: Float -> Int -> Int -> Float
-calculateLifeBarLength initPosition currentPs maxPs = initPosition + lifeBarMaxLength * intToFloat maxPs / intToFloat currentPs
+calculateLifeBarLength initPosition currentPs maxPs = initPosition + lifeBarMaxLength * intToFloat currentPs / intToFloat maxPs
 
 lifeString :: Int -> Int -> String
 lifeString currentPs maxPs = show currentPs ++ "/" ++ show maxPs
@@ -97,25 +97,25 @@ renderPokemonLife position currentPs maxPs =
 renderPokemon :: Player -> Pokemon -> Picture
 renderPokemon Ash pokemon = pictures [
       renderPokemonName ashPosition ashColor (name pokemon)
-    , renderPokemonLife ashPosition (maxPs (stats pokemon)) (currentPs (stats pokemon)) ]
+    , renderPokemonLife ashPosition (currentPs (stats pokemon)) (maxPs (stats pokemon))]
 renderPokemon Gary pokemon = pictures [
       renderPokemonName garyPosition garyColor (name pokemon)
-    , renderPokemonLife garyPosition (maxPs (stats pokemon)) (currentPs (stats pokemon))]
+    , renderPokemonLife garyPosition (currentPs (stats pokemon)) (maxPs (stats pokemon))]
 
 boardGrid :: Picture
 boardGrid =
     pictures
-     [ line [ (fromIntegral screenWidth / 2, 0.0)
-            , (fromIntegral screenWidth / 2, fromIntegral screenHeight/2)
+     [ line [ (cellWidth, 0.0)
+            , (cellWidth, cellHeight * 2) -- Linea |
             ]
     , line [ (0.0, 0.0)
-            , (fromIntegral screenWidth, 0.0)
-            ]
-    , line [ (0.0, cellHeight/2)
-            , (fromIntegral screenWidth, cellHeight/2)
+            , (cellWidth * 2, 0.0) -- Linea __
             ]
     , line [ (0.0, cellHeight)
-            , (fromIntegral screenWidth, cellHeight)
+            , (cellWidth * 2, cellHeight) -- Linea --
+            ]
+    , line [ (0.0, cellHeight * 2)
+            , (cellWidth * 2, cellHeight * 2)
             ]
     ]
 
