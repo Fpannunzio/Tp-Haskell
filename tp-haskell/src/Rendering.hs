@@ -5,7 +5,6 @@ import Graphics.Gloss
 
 import Game
 import Types
-import Game (screenHeight)
 
 boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
@@ -32,8 +31,11 @@ outcomeColor :: Player -> Color
 outcomeColor Ash = ashColor
 outcomeColor Gary = garyColor
 
-defaultTextScale :: (Float, Float)
+defaultTextScale :: Position
 defaultTextScale = (0.3, 0.3)
+
+attackTextScale :: Position
+attackTextScale = (0.4, 0.4)
 
 ashPosition :: Float
 ashPosition = intToFloat screenWidth * 0.05
@@ -41,8 +43,18 @@ ashPosition = intToFloat screenWidth * 0.05
 garyPosition :: Float
 garyPosition = intToFloat screenWidth * 0.6
 
-winnerPosition :: (Float, Float)
+winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
+
+attackPositions :: [Position]
+attackPositions = [(cellWidth * 0.25, cellHeight * 0.7), (cellWidth * 1.25, cellHeight * 0.7), (cellWidth * 0.25, cellHeight * 0.2), (cellWidth * 1.25, cellHeight * 0.2)]
+
+pokemonTypeColor :: PokemonType -> Color
+pokemonTypeColor Normal = greyN 0.5
+pokemonTypeColor Fuego = makeColorI 255 0 0 255
+pokemonTypeColor Agua = makeColorI 0 0 255 255
+pokemonTypeColor Hierba = makeColorI 0 255 0 255
+
 
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
 gameRunningPicture :: Pokemon -> Pokemon -> Picture
@@ -50,7 +62,7 @@ gameRunningPicture ashPokemon garyPokemon =
     pictures [
               renderPokemon Gary garyPokemon
             , renderPokemon Ash ashPokemon
-            , pokemonAttacksBoard ashPokemon
+            , pokemonAttacksBoard (movs ashPokemon)
             , color boardGridColor boardGrid
              ]
 
@@ -62,7 +74,7 @@ renderPokemonName position currentColor name =
     $ text name
 
 calculateLifeBarLength :: Float -> Int -> Int -> Float
-calculateLifeBarLength initPosition currentPs maxPs = initPosition + (lifeBarMaxLength * intToFloat maxPs / intToFloat currentPs)
+calculateLifeBarLength initPosition currentPs maxPs = initPosition + lifeBarMaxLength * intToFloat maxPs / intToFloat currentPs
 
 lifeString :: Int -> Int -> String
 lifeString currentPs maxPs = show currentPs ++ "/" ++ show maxPs
@@ -107,22 +119,19 @@ boardGrid =
             ]
     ]
 
--- Deberia mostrar, las dos fotos de los pokemones, su nombre y su vida
-gameFightingPicture :: Pokemon -> Pokemon -> Picture
-gameFightingPicture ashPokemon garyPokemon =
-    pictures [ color ashColor $ text (name ashPokemon)
-             , color garyColor $ text (name garyPokemon)
-             , pokemonAttacksBoard ashPokemon
-             ]
+renderPokemonAttack :: PokemonAttack -> Position -> Picture
+renderPokemonAttack pokemonAttack pos = uncurry translate pos (uncurry scale attackTextScale (color (pokemonTypeColor (pokType pokemonAttack))  (Text  (attackName pokemonAttack))))
+
 -- Translate te pone el pixel abajo
 -- IMPORTANTE primero escalar y despues traducir
-pokemonAttacksBoard :: Pokemon -> Picture
-pokemonAttacksBoard ashPokemon =  pictures (map (translate (cellWidth * 0.25) (cellHeight * 0.7) . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
-      
+pokemonAttacksBoard :: PokemonMovs -> Picture
+pokemonAttacksBoard pokeMovs = pictures (zipWith renderPokemonAttack pokeMovs attackPositions)
+-- pokemonAttacksBoard ashPokemon  =  pictures (map (uncurry translate  . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
+
 boardAsGameOverPicture :: Player -> Picture
 boardAsGameOverPicture winner = uncurry translate winnerPosition
                      $ color (outcomeColor winner)
-                     $ text (show winner ++ " wins")    
+                     $ text (show winner ++ " wins")
 
 gameAsPicture :: Game -> Picture
 gameAsPicture game = translate (fromIntegral screenWidth * (-0.5))
@@ -130,5 +139,4 @@ gameAsPicture game = translate (fromIntegral screenWidth * (-0.5))
                                frame
     where frame = case gameState game of
                     Running -> gameRunningPicture (head (ashTeam game)) (head (garyTeam game))
-                    Fighting -> gameFightingPicture (head (ashTeam game)) (head (garyTeam game))
                     GameOver winner -> boardAsGameOverPicture winner
