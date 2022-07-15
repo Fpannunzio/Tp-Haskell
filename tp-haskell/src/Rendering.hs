@@ -5,6 +5,7 @@ import Graphics.Gloss
 
 import Game
 import Types
+import Game (screenHeight)
 
 boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
@@ -40,6 +41,9 @@ ashPosition = intToFloat screenWidth * 0.05
 garyPosition :: Float
 garyPosition = intToFloat screenWidth * 0.6
 
+winnerPosition :: (Float, Float)
+winnerPosition = (0.0, intToFloat screenHeight * 0.45)
+
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
 gameRunningPicture :: Pokemon -> Pokemon -> Picture
 gameRunningPicture ashPokemon garyPokemon =
@@ -58,7 +62,7 @@ renderPokemonName position currentColor name =
     $ text name
 
 calculateLifeBarLength :: Float -> Int -> Int -> Float
-calculateLifeBarLength initPosition currentPs maxPs = initPosition + (lifeBarMaxLength *  intToFloat currentPs / intToFloat maxPs)
+calculateLifeBarLength initPosition currentPs maxPs = initPosition + (lifeBarMaxLength * intToFloat maxPs / intToFloat currentPs)
 
 lifeString :: Int -> Int -> String
 lifeString currentPs maxPs = show currentPs ++ "/" ++ show maxPs
@@ -114,11 +118,11 @@ gameFightingPicture ashPokemon garyPokemon =
 -- IMPORTANTE primero escalar y despues traducir
 pokemonAttacksBoard :: Pokemon -> Picture
 pokemonAttacksBoard ashPokemon =  pictures (map (translate (cellWidth * 0.25) (cellHeight * 0.7) . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
-
+      
 boardAsGameOverPicture :: Player -> Picture
-boardAsGameOverPicture winner = case winner of
-                        Ash -> color (outcomeColor Ash) (Text "Ash wins")
-                        Gary -> color (outcomeColor Gary) (Text "Gary wins")
+boardAsGameOverPicture winner = uncurry translate winnerPosition
+                     $ color (outcomeColor winner)
+                     $ text (show winner ++ " wins")    
 
 gameAsPicture :: Game -> Picture
 gameAsPicture game = translate (fromIntegral screenWidth * (-0.5))

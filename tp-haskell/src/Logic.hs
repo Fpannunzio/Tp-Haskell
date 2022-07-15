@@ -7,10 +7,14 @@ import Graphics.Gloss.Interface.Pure.Game
 import Game
 import Types
 
+
 toPositive :: Int -> Int
 toPositive x
-  | x < 0 = x
+  | x > 0 = x
   | otherwise = 0
+
+attackFormula :: Int -> Int -> Int -> Int
+attackFormula attack defense attackDmg = toPositive (floor ((intToFloat(attackDmg * attack) / intToFloat defense) / 5.0))
 
 processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
 processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
@@ -22,7 +26,7 @@ processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
     pokemonDefense = defense defensivePokemonStats
   in
     defensivePokemonStats {
-      currentPs = defensivePS - toPositive(pokemonDefense - (bpa * pokemonAD))
+      currentPs = toPositive (defensivePS - attackFormula pokemonAD pokemonDefense bpa)
     }
 
 processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
@@ -35,7 +39,7 @@ processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
     pokemonSpDefense = spDefense defensivePokemonStats
   in
     defensivePokemonStats {
-      currentPs = defensivePS - toPositive(pokemonSpDefense - (bpa * pokemonAP))
+      currentPs = toPositive (defensivePS - attackFormula pokemonAP pokemonSpDefense bpa)
     }
 
 processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
@@ -144,7 +148,8 @@ mousePosAsCellCoord (x, y) = ( floor ((y + (fromIntegral screenHeight * 0.5)) / 
 
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
-      Running -> playerTurn game $ mousePosAsCellCoord mousePos
+      -- Running -> playerTurn game $ mousePosAsCellCoord mousePos
+      Running -> playerTurn game (0,0)
       Fighting -> initialGame
       GameOver _ -> initialGame
 transformGame _ game = game

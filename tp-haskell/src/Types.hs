@@ -46,7 +46,7 @@ generatePokemonTeamP 0 = []
 generatePokemonTeamP n =
   Pokemon {
     name = "Charmander"
-  , stats = PokemonStatistics {pokemonType = Fuego, maxPs = 20, currentPs = 20, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , stats = PokemonStatistics {pokemonType = Fuego, maxPs = 25, currentPs = 25, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
   , movs = [PokemonAttack {attackName = "Placaje", base = 25, attackType = Physic}]
   } : generatePokemonTeamP(n-1)
 
@@ -55,6 +55,6 @@ generatePokemonTeamC 0 = []
 generatePokemonTeamC n =
   Pokemon {
     name = "Squirtle"
-  , stats = PokemonStatistics {pokemonType = Agua, maxPs = 20, currentPs = 20, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , stats = PokemonStatistics {pokemonType = Agua, maxPs = 25, currentPs = 25, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
   , movs = [PokemonAttack {attackName = "Placaje", base = 25, attackType = Physic}]
   } : generatePokemonTeamC(n-1)
