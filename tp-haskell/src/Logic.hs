@@ -50,40 +50,6 @@ swapDefetedPokemon game
       ashRemaingPokemons = tail (ashTeam game)
       garyRemaingPokemons = tail (garyTeam game)
 
-toPositive :: Int -> Int
-toPositive x
-  | x > 0 = x
-  | otherwise = 0
-
-attackFormula :: Int -> Int -> Int -> Int
-attackFormula attack defense attackDmg = toPositive (floor ((intToFloat(attackDmg * attack) / intToFloat defense) / 5.0))
-
-processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
-processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
-  let
-    bpa = base pokemonAttack
-    pokemonAD= attack attackingPokemonStats
-    -- critChance = crit attackingPokemonStats
-    defensivePS = currentPs defensivePokemonStats
-    pokemonDefense = defense defensivePokemonStats
-  in
-    defensivePokemonStats {
-      currentPs = toPositive (defensivePS - attackFormula pokemonAD pokemonDefense bpa)
-    }
-
-processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
-processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
-  let
-    bpa = base pokemonAttack
-    pokemonAP = spAttack attackingPokemonStats
-    -- critChance = crit attackingPokemonStats
-    defensivePS = currentPs defensivePokemonStats
-    pokemonSpDefense = spDefense defensivePokemonStats
-  in
-    defensivePokemonStats {
-      currentPs = toPositive (defensivePS - attackFormula pokemonAP pokemonSpDefense bpa)
-    }
-
 substractedAttack :: PokemonAttack -> PokemonAttack
 substractedAttack attack =
   let
@@ -107,7 +73,7 @@ substractAttackMovAux pok attackIndex =
 
 substractAttackMov :: Int -> Int -> Game -> Game
 substractAttackMov apAttack gpAttack game =
-  let 
+  let
     ashPokemon = head (ashTeam game)
     garyPokemon = head (garyTeam game)
   in
@@ -116,6 +82,55 @@ substractAttackMov apAttack gpAttack game =
       garyTeam = substractAttackMovAux garyPokemon gpAttack : tail (garyTeam game)
     }
 
+
+toPositive :: Int -> Int
+toPositive x
+  | x > 0 = x
+  | otherwise = 0
+
+calculateStab :: PokemonAttributes -> PokemonType -> Float
+calculateStab attackingAtr attackType = if attackType `elem` attackingAtr then 1.5 else 1
+
+calculateEffectiveness :: PokemonAttributes -> PokemonType -> Float
+calculateEffectiveness defendingAtr attackType = product (map (typeTable attackType) defendingAtr)
+
+attackFormula :: Int -> Int -> Int -> PokemonAttributes -> PokemonAttributes -> PokemonAttack -> Int
+attackFormula attack defense defensivePS attackingAtr defendingAtr pokemonAttack =
+  let
+    attackDmg = base pokemonAttack
+    attackType = pokType pokemonAttack
+    attackStab = calculateStab attackingAtr attackType
+    efectiveness = calculateEffectiveness defendingAtr attackType
+  in
+  toPositive(defensivePS - toPositive (floor ((intToFloat(attackDmg * attack) * attackStab * efectiveness / intToFloat defense) / 5.0)))
+
+processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
+processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
+  let
+    attackingPokemonTypes = pokemonType attackingPokemonStats
+    defendingPokemonTypes = pokemonType defensivePokemonStats
+    -- critChance = crit attackingPokemonStats
+    attackingAttack = attack attackingPokemonStats
+    defensivePS = currentPs defensivePokemonStats
+    defensiveDefense = defense defensivePokemonStats
+  in
+    defensivePokemonStats {
+      currentPs = attackFormula attackingAttack defensiveDefense defensivePS attackingPokemonTypes defendingPokemonTypes pokemonAttack
+    }
+
+processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
+processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
+  let
+    attackingPokemonTypes = pokemonType attackingPokemonStats
+    defendingPokemonTypes = pokemonType defensivePokemonStats
+    -- critChance = crit attackingPokemonStats
+    attackingSpAttack = spAttack attackingPokemonStats
+    defensivePS = currentPs defensivePokemonStats
+    defensiveSpDefense = spDefense defensivePokemonStats
+  in
+    defensivePokemonStats {
+      currentPs = attackFormula attackingSpAttack defensiveSpDefense defensivePS attackingPokemonTypes defendingPokemonTypes pokemonAttack 
+    }
 
 processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
 processAttack attackingPokemon defendingPokemon pokemonAttack =
