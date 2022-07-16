@@ -1,7 +1,6 @@
 module Logic where
 
-import Data.Array
-import Data.Foldable ( asum )
+import Data.Sequence
 
 import Graphics.Gloss.Interface.Pure.Game
 import Game
@@ -85,6 +84,39 @@ processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
       currentPs = toPositive (defensivePS - attackFormula pokemonAP pokemonSpDefense bpa)
     }
 
+substractedAttack :: PokemonAttack -> PokemonAttack
+substractedAttack attack =
+  let
+    currentMovs = movsLeft attack
+  in
+    attack {
+      movsLeft = currentMovs - 1
+    }
+
+substractAttackMovAux :: Pokemon -> Int -> Pokemon
+substractAttackMovAux pok attackIndex =
+  let
+    allMovs = movs pok
+    attack =  Data.Sequence.lookup attackIndex allMovs -- equivalente a hacer allMovs !! attackIndex
+  in
+    case attack of
+      Nothing -> pok
+      Just att -> pok {
+        movs = Data.Sequence.update attackIndex (substractedAttack att) allMovs
+    }
+
+substractAttackMov :: Int -> Int -> Game -> Game
+substractAttackMov apAttack gpAttack game =
+  let 
+    ashPokemon = head (ashTeam game)
+    garyPokemon = head (garyTeam game)
+  in
+    game {
+      ashTeam =  substractAttackMovAux ashPokemon apAttack : tail (ashTeam game), --Se lee, el pokemon de Gary ataca al pokemon de ash con el ataque gpAttack
+      garyTeam = substractAttackMovAux garyPokemon gpAttack : tail (garyTeam game)
+    }
+
+
 processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
 processAttack attackingPokemon defendingPokemon pokemonAttack =
   let
@@ -111,20 +143,46 @@ checkFirstAttack ashPokemon garyPokemon game
       ashSpeed = speed (stats ashPokemon)
       garySpeed = speed (stats garyPokemon)
 
+checkMaybeGaryValue :: Maybe Int -> Int
+checkMaybeGaryValue Nothing = 4
+checkMaybeGaryValue (Just i) = i
+
+checkMaybeAttack :: Maybe PokemonAttack -> PokemonAttack
+checkMaybeAttack Nothing = PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
+checkMaybeAttack (Just pa) = pa
+
+garyAttackPick :: Pokemon -> Int
+garyAttackPick pokemon =
+  let
+    pokemonMovs = movs pokemon
+    nonEmptyAttacks = Data.Sequence.filter stillHasMoves pokemonMovs
+    number = 0 -- TODO random number
+  in
+    if Data.Sequence.null nonEmptyAttacks then 4
+    else  checkMaybeGaryValue (Data.Sequence.elemIndexL (checkMaybeAttack(Data.Sequence.lookup number nonEmptyAttacks)) pokemonMovs)
+
+stillHasMoves :: PokemonAttack -> Bool
+stillHasMoves pokemonAttack = movsLeft pokemonAttack > 0
+
 fightPokemon :: Game -> Int -> Game
-fightPokemon game attackNumber =
-    let
+fightPokemon game attackNumber
+    -- | not (isCoordCorrect garyAttackNumber) = game --TODO Sacar el pokemon de Gary
+    | stillHasMoves apAttack =
+      checkStillFighting
+        $ swapDefetedPokemon
+        $ substractAttackMov attackNumber garyAttackNumber
+        $ fight ashPokemon garyPokemon apAttack gpAttack
+        $ checkFirstAttack ashPokemon garyPokemon game
+    | otherwise = game
+    where
       ashPokemon = head (ashTeam game)
       garyPokemon = head (garyTeam game)
-      apAttack = movs ashPokemon !! attackNumber 
-      gpAttack = movs ashPokemon !! attackNumber --TODO Hacer que sea un numero random
-    in
-      checkStillFighting $
-      swapDefetedPokemon $
-      fight ashPokemon garyPokemon apAttack gpAttack $
-      checkFirstAttack ashPokemon garyPokemon game
+      apAttack = checkMaybeAttack (Data.Sequence.lookup attackNumber (movs ashPokemon))
+      garyAttackNumber = garyAttackPick garyPokemon
+      gpAttack = checkMaybeAttack (Data.Sequence.lookup garyAttackNumber (movs garyPokemon))
 
-isCoordCorrect = inRange (0, 3)
+isCoordCorrect :: Int -> Bool
+isCoordCorrect x = x >= 0 && x <=3 -- inRange?
 
 cellCordToAttack :: (Int, Int) -> Int
 cellCordToAttack cellCord =
@@ -134,8 +192,6 @@ cellCordToAttack cellCord =
     (0, 0) -> 2
     (1, 0) -> 3
     _ -> 4
-
-
 
 playerTurn :: Game -> (Int, Int) -> Game
 playerTurn game cellCoord

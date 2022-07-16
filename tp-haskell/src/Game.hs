@@ -1,15 +1,8 @@
 module Game where
 import Types
-    ( Board,
-      PokemonTeam,
-      generatePokemonTeamP,
-      generatePokemonTeamC,
-      State(Running),
-      Player(Ash) )
-import Data.Array
 
-data Game = Game { gameBoard :: Board
-                 , firstPlayer :: Player
+
+data Game = Game { firstPlayer :: Player
                  , ashTeam :: PokemonTeam
                  , garyTeam :: PokemonTeam
                  , gameState :: State
@@ -31,8 +24,7 @@ cellHeight :: Float
 cellHeight = fromIntegral screenHeight / (fromIntegral n * 2.0)
 
 initialGame :: Game
-initialGame = Game { gameBoard = array indexRange $ zip (range indexRange) (repeat "Ataque") --Aca voy a tener que escribir los nombres de los ataques (Como hacer esto a partir de los pokemones)
-                   , firstPlayer = Ash
+initialGame = Game { firstPlayer = Ash
                    , ashTeam = generatePokemonTeamP 1
                    , garyTeam = generatePokemonTeamC 1
                    , gameState = Running

@@ -1,6 +1,9 @@
 module Rendering where
 
 import Data.Array
+import Data.Foldable (toList)
+import Data.Sequence ( fromList, Seq)
+
 import Graphics.Gloss
 
 import Game
@@ -133,7 +136,7 @@ renderPokemonAttack pokemonAttack pos =
 -- Translate te pone el pixel abajo
 -- IMPORTANTE primero escalar y despues traducir
 pokemonAttacksBoard :: PokemonMovs -> Picture
-pokemonAttacksBoard pokeMovs = pictures (zipWith renderPokemonAttack pokeMovs attackPositions)
+pokemonAttacksBoard pokeMovs = pictures (zipWith renderPokemonAttack (toList pokeMovs) attackPositions)
 -- pokemonAttacksBoard ashPokemon  =  pictures (map (uncurry translate  . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
 
 boardAsGameOverPicture :: Player -> Picture
