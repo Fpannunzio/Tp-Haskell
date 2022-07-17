@@ -12,10 +12,10 @@ n :: Int
 n = 2
 
 screenWidth :: Int
-screenWidth = 640
+screenWidth = 960
 
 screenHeight :: Int
-screenHeight = 480
+screenHeight = 640
 
 cellWidth :: Float
 cellWidth = fromIntegral screenWidth / fromIntegral n
@@ -26,6 +26,9 @@ cellHeight = fromIntegral screenHeight / (fromIntegral n * 2.0)
 
 getSeeds :: Int -> Game -> [Int]
 getSeeds amount game = take amount (seeds game)
+
+getSeed :: Game -> Int
+getSeed game = head (seeds game)
 
 removeSeed :: Game -> Game
 removeSeed game = 
