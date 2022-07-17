@@ -17,26 +17,72 @@ data PokemonStatistics = PokemonStatistics
     crit :: Float
   } deriving (Eq, Show)
 
-data AttackType = Physic | Special deriving (Eq, Show)
-data PokemonAttack = PokemonAttack { 
+data PokemonStat = Attack | Defense | SpecialAttack | SpecialDefense | Speed | Crit deriving (Eq, Show)
+
+type PokemonStats = [PokemonStat]
+
+data PokemonStatus = Poisoned | Paralized | Burned deriving (Eq, Show)
+
+poisonedPorc :: Float
+poisonedPorc = 0.15
+
+burnedPorc :: Float
+burnedPorc = 0.07
+
+paralizedChance :: Float
+paralizedChance = 0.5
+
+data DmgType = Physic | Special deriving (Eq, Show)
+
+getAttackingStat :: DmgType -> PokemonStatistics -> Int
+getAttackingStat Physic pokStats = attack pokStats
+getAttackingStat Special pokStats = spAttack pokStats
+
+getDefensiveStat :: DmgType -> PokemonStatistics -> Int
+getDefensiveStat Physic pokStats = defense pokStats
+getDefensiveStat Special pokStats = spDefense pokStats
+
+data MovType = Buff | Dmg | Status | Change deriving (Eq, Show)
+
+data MovParams =
+  DmgMov {
+    power :: Int
+  , dmgType :: DmgType } |
+  BuffMov {
+    multiplier :: Float
+  , upgradedStats :: PokemonStats } |
+  StatusMov {
+    statusType :: PokemonStatus
+  } |
+  ChangeMov
+ deriving (Eq, Show)
+
+data PokemonMov = PokemonMov {
      attackName :: String
-  ,  base :: Int
-  ,  pokType :: PokemonType
-  ,  attackType :: AttackType
+  ,  movType :: MovType
   ,  movsLeft :: Int
+  ,  accuracy :: Float
+  ,  pokType :: PokemonType
+  ,  movParams :: MovParams
 } deriving (Eq, Show)
 
-type PokemonMovs = Seq PokemonAttack
+type PokemonMovs = Seq PokemonMov
 
 type Position = (Float, Float)
 data Pokemon = Pokemon { name :: String
                       ,  stats :: PokemonStatistics
+                      ,  status :: Maybe PokemonStatus
                       ,  movs :: PokemonMovs
 } deriving (Eq, Show)
 
 type PokemonTeam = [Pokemon]
 
 data Player = Ash | Gary deriving (Eq, Show)
+
+otherPlayer :: Player -> Player
+otherPlayer Ash = Gary
+otherPlayer Gary = Ash
+
 
 type Cell = String
 
@@ -55,17 +101,21 @@ typeTable _ _ = 1.0
 intToFloat :: Int -> Float
 intToFloat number = fromIntegral number :: Float
 
+multiplyByFloor :: Int -> Float -> Int
+multiplyByFloor number mult = floor (intToFloat number * mult)
+
 generatePokemonTeamP :: Int -> PokemonTeam
 generatePokemonTeamP 0 = []
 generatePokemonTeamP n =
   Pokemon {
     name = "Charmander"
-  , stats = PokemonStatistics {pokemonType = [Fuego], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.5}
+  , stats = PokemonStatistics {pokemonType = [Fuego], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , status = Nothing
   , movs = fromList [
-    PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
-  , PokemonAttack {attackName = "Ascuas", base = 25, pokType = Fuego, attackType = Physic, movsLeft = 10}
-  , PokemonAttack {attackName = "Burbuja", base = 25, pokType = Agua, attackType = Physic, movsLeft = 5}
-  , PokemonAttack {attackName = "Latigo", base = 25, pokType = Hierba, attackType = Physic, movsLeft = 10}]
+    PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
+  , PokemonMov {attackName = "Envenenar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = StatusMov {statusType = Poisoned}}
+  , PokemonMov {attackName = "Paralizar", movType = Buff, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = BuffMov {multiplier = 1.5, upgradedStats = [Attack, SpecialAttack]}}
+  , PokemonMov {attackName = "Quemar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = StatusMov {statusType = Burned}}]
   } : generatePokemonTeamP(n-1)
 
 generatePokemonTeamC :: Int -> PokemonTeam
@@ -74,10 +124,10 @@ generatePokemonTeamC n =
   Pokemon {
     name = "Squirtle"
   , stats = PokemonStatistics {pokemonType = [Agua], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , status = Nothing
   , movs = fromList [
-    PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
-  , PokemonAttack {attackName = "Burbuja", base = 20, pokType = Agua, attackType = Special, movsLeft = 10}
-  , PokemonAttack {attackName = "Mordida", base = 35, pokType = Normal, attackType = Physic, movsLeft = 5}
-  , PokemonAttack {attackName = "Golpe", base = 15, pokType = Normal, attackType = Physic, movsLeft = 10}
-  ]
+    PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
+  , PokemonMov {attackName = "Ascuas", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = DmgMov {power = 25, dmgType = Physic}}
+  , PokemonMov {attackName = "Furia", movType = Buff, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = BuffMov {multiplier = 1.5, upgradedStats = [Attack, SpecialAttack]}}
+  , PokemonMov {attackName = "Ascuas", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = StatusMov {statusType = Burned}}]
   }: generatePokemonTeamC(n-1)

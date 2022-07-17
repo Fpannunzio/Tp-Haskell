@@ -24,33 +24,38 @@ lifeBarMaxLength = intToFloat screenWidth * 0.15
 lifeHeight :: Float
 lifeHeight = intToFloat screenHeight * 0.8 :: Float
 
-ashColor :: Color
-ashColor = makeColorI 255 50 50 255
-
-garyColor :: Color
-garyColor = makeColorI 50 100 255 255
-
-outcomeColor :: Player -> Color
-outcomeColor Ash = ashColor
-outcomeColor Gary = garyColor
-
 defaultTextScale :: Position
 defaultTextScale = (0.3, 0.3)
 
 attackTextScale :: Position
 attackTextScale = (0.4, 0.4)
 
-ashPosition :: Float
-ashPosition = intToFloat screenWidth * 0.05
+playerColor :: Player -> Color
+playerColor Ash = makeColorI 255 50 50 255
+playerColor Gary = makeColorI 50 100 255 255
 
-garyPosition :: Float
-garyPosition = intToFloat screenWidth * 0.6
+playerPosition :: Player -> Float
+playerPosition Ash = intToFloat screenWidth * 0.05
+playerPosition Gary = intToFloat screenWidth * 0.6
+
+statusPosition :: Float
+statusPosition = intToFloat screenWidth * 0.25
 
 winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
 
 attackPositions :: [Position]
 attackPositions = [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
+
+pokemonStatusColor :: PokemonStatus -> Color
+pokemonStatusColor Poisoned = makeColorI 153 0 153 255
+pokemonStatusColor Paralized = makeColorI 255 255 0 255
+pokemonStatusColor Burned = makeColorI 255 0 0 255
+
+statusText :: PokemonStatus -> String
+statusText Poisoned = "ENV"
+statusText Paralized = "PAR"
+statusText Burned = "QUE"
 
 pokemonTypeColor :: PokemonType -> Color
 pokemonTypeColor Normal = greyN 0.5
@@ -97,13 +102,20 @@ renderPokemonLife position currentPs maxPs =
   $ text (lifeString currentPs maxPs)
   ]
 
+renderPokemonStatus :: Float -> Maybe PokemonStatus -> Picture
+renderPokemonStatus position Nothing = Blank
+renderPokemonStatus position (Just status) = 
+  translate position nameHeight
+  $ uncurry scale defaultTextScale
+  $ color (pokemonStatusColor status) 
+  $ text (statusText status)
+
+
 renderPokemon :: Player -> Pokemon -> Picture
-renderPokemon Ash pokemon = pictures [
-      renderPokemonName ashPosition ashColor (name pokemon)
-    , renderPokemonLife ashPosition (currentPs (stats pokemon)) (maxPs (stats pokemon))]
-renderPokemon Gary pokemon = pictures [
-      renderPokemonName garyPosition garyColor (name pokemon)
-    , renderPokemonLife garyPosition (currentPs (stats pokemon)) (maxPs (stats pokemon))]
+renderPokemon player pokemon = pictures [
+      renderPokemonName (playerPosition player) (playerColor player) (name pokemon)
+    , renderPokemonStatus (playerPosition player + statusPosition) (status pokemon) 
+    , renderPokemonLife (playerPosition player) (currentPs (stats pokemon)) (maxPs (stats pokemon))]
 
 boardGrid :: Picture
 boardGrid =
@@ -125,7 +137,7 @@ boardGrid =
 attackString :: Int -> String -> String
 attackString movCount attName = show movCount ++ "-" ++ attName
 
-renderPokemonAttack :: PokemonAttack -> Position -> Picture
+renderPokemonAttack :: PokemonMov -> Position -> Picture
 renderPokemonAttack pokemonAttack pos =
   let
     movCount = movsLeft pokemonAttack
@@ -141,7 +153,7 @@ pokemonAttacksBoard pokeMovs = pictures (zipWith renderPokemonAttack (toList pok
 
 boardAsGameOverPicture :: Player -> Picture
 boardAsGameOverPicture winner = uncurry translate winnerPosition
-                     $ color (outcomeColor winner)
+                     $ color (playerColor winner)
                      $ text (show winner ++ " wins")
 
 gameAsPicture :: Game -> Picture
