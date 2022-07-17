@@ -14,7 +14,7 @@ data PokemonStatistics = PokemonStatistics
     spAttack :: Int,
     spDefense :: Int,
     speed :: Int,
-    crit :: Double
+    crit :: Float
   } deriving (Eq, Show)
 
 data AttackType = Physic | Special deriving (Eq, Show)
@@ -60,7 +60,7 @@ generatePokemonTeamP 0 = []
 generatePokemonTeamP n =
   Pokemon {
     name = "Charmander"
-  , stats = PokemonStatistics {pokemonType = [Fuego], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , stats = PokemonStatistics {pokemonType = [Fuego], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.5}
   , movs = fromList [
     PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
   , PokemonAttack {attackName = "Ascuas", base = 25, pokType = Fuego, attackType = Physic, movsLeft = 10}
@@ -78,5 +78,6 @@ generatePokemonTeamC n =
     PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
   , PokemonAttack {attackName = "Burbuja", base = 20, pokType = Agua, attackType = Special, movsLeft = 10}
   , PokemonAttack {attackName = "Mordida", base = 35, pokType = Normal, attackType = Physic, movsLeft = 5}
-  , PokemonAttack {attackName = "Golpe", base = 15, pokType = Normal, attackType = Physic, movsLeft = 10}]
+  , PokemonAttack {attackName = "Golpe", base = 15, pokType = Normal, attackType = Physic, movsLeft = 10}
+  ]
   }: generatePokemonTeamC(n-1)

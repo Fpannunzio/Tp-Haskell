@@ -58,15 +58,17 @@ executable functional
                      , Logic
                      , Rendering
                      , Types
+                     , Random
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
   
   -- Other library packages from which modules are imported.
-  build-depends:       base >=4.9 && <4.11
+  build-depends:       base >=4.9 && <4.16
                      , array
                      , gloss
                      , containers >= 0.5.8.1
+                     , random >= 1.2.0
     
   
   -- Directories containing source files.

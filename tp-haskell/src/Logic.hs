@@ -5,7 +5,7 @@ import Data.Sequence
 import Graphics.Gloss.Interface.Pure.Game
 import Game
 import Types
-
+import Random
 
 -- Si el segundo equipo es vacio siempre gana el primer jugador
 -- Si el primero era vacio y no sali por el primer caso es que el segundo no lo es, gana el segundo jugador
@@ -88,66 +88,83 @@ toPositive x
   | x > 0 = x
   | otherwise = 0
 
+calculateCrit :: Float -> Int -> Float
+calculateCrit critChance seed = 
+  let
+    probability = randomProbability seed
+  in
+    if probability < critChance then 2.0
+    else 1.0
+
 calculateStab :: PokemonAttributes -> PokemonType -> Float
 calculateStab attackingAtr attackType = if attackType `elem` attackingAtr then 1.5 else 1
 
 calculateEffectiveness :: PokemonAttributes -> PokemonType -> Float
 calculateEffectiveness defendingAtr attackType = product (map (typeTable attackType) defendingAtr)
 
-attackFormula :: Int -> Int -> Int -> PokemonAttributes -> PokemonAttributes -> PokemonAttack -> Int
-attackFormula attack defense defensivePS attackingAtr defendingAtr pokemonAttack =
+attackFormula :: Int -> Float -> Int -> Int -> PokemonAttributes -> PokemonAttributes -> PokemonAttack -> Int -> Int
+attackFormula attack critChance defense defensivePS attackingAtr defendingAtr pokemonAttack seed =
   let
     attackDmg = base pokemonAttack
     attackType = pokType pokemonAttack
+    crit = calculateCrit critChance seed
     attackStab = calculateStab attackingAtr attackType
     efectiveness = calculateEffectiveness defendingAtr attackType
   in
-  toPositive(defensivePS - toPositive (floor ((intToFloat(attackDmg * attack) * attackStab * efectiveness / intToFloat defense) / 5.0)))
+  toPositive(defensivePS - toPositive (floor ((intToFloat(attackDmg * attack) * attackStab * efectiveness * crit / intToFloat defense) / 5.0)))
 
-processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
-processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
+processPhysicAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> Int -> PokemonStatistics
+processPhysicAttack attackingPokemonStats defensivePokemonStats pokemonAttack seed =
   let
     attackingPokemonTypes = pokemonType attackingPokemonStats
     defendingPokemonTypes = pokemonType defensivePokemonStats
-    -- critChance = crit attackingPokemonStats
+    critChance = crit attackingPokemonStats
     attackingAttack = attack attackingPokemonStats
     defensivePS = currentPs defensivePokemonStats
     defensiveDefense = defense defensivePokemonStats
   in
     defensivePokemonStats {
-      currentPs = attackFormula attackingAttack defensiveDefense defensivePS attackingPokemonTypes defendingPokemonTypes pokemonAttack
+      currentPs = attackFormula attackingAttack critChance defensiveDefense defensivePS attackingPokemonTypes defendingPokemonTypes pokemonAttack seed
     }
 
-processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> PokemonStatistics
-processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack =
+processSpecialAttack :: PokemonStatistics -> PokemonStatistics -> PokemonAttack -> Int -> PokemonStatistics
+processSpecialAttack attackingPokemonStats defensivePokemonStats pokemonAttack seed =
   let
     attackingPokemonTypes = pokemonType attackingPokemonStats
     defendingPokemonTypes = pokemonType defensivePokemonStats
-    -- critChance = crit attackingPokemonStats
+    critChance = crit attackingPokemonStats
     attackingSpAttack = spAttack attackingPokemonStats
     defensivePS = currentPs defensivePokemonStats
     defensiveSpDefense = spDefense defensivePokemonStats
   in
     defensivePokemonStats {
-      currentPs = attackFormula attackingSpAttack defensiveSpDefense defensivePS attackingPokemonTypes defendingPokemonTypes pokemonAttack 
+      currentPs = attackFormula attackingSpAttack critChance defensiveSpDefense defensivePS attackingPokemonTypes defendingPokemonTypes pokemonAttack seed
     }
 
-processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Pokemon
-processAttack attackingPokemon defendingPokemon pokemonAttack =
+processAttack :: Pokemon -> Pokemon -> PokemonAttack -> Int -> Pokemon
+processAttack attackingPokemon defendingPokemon pokemonAttack seed =
   let
     apStats = stats attackingPokemon
     dpStats = stats defendingPokemon
   in
     case attackType pokemonAttack of
-      Physic ->  defendingPokemon { stats = processPhysicAttack apStats dpStats pokemonAttack }
-      Special ->  defendingPokemon { stats = processSpecialAttack apStats dpStats pokemonAttack }
+      Physic ->  defendingPokemon { stats = processPhysicAttack apStats dpStats pokemonAttack seed }
+      Special ->  defendingPokemon { stats = processSpecialAttack apStats dpStats pokemonAttack seed }
 
 -- Actualizo a los dos equipos
 fight :: Pokemon -> Pokemon -> PokemonAttack -> PokemonAttack -> Game -> Game
 fight ashPokemon garyPokemon apAttack gpAttack game =
+  let
+    seeds = getSeeds 2 game
+    firstSeed = head seeds
+    secondSeed = seeds !! 1
+  in
+  -- Tengo que eliminar las dos seeds que ya use 
+  removeSeed $
+  removeSeed $
   game {
-    ashTeam =  processAttack garyPokemon ashPokemon gpAttack : tail (ashTeam game), --Se lee, el pokemon de Gary ataca al pokemon de ash con el ataque gpAttack
-    garyTeam = processAttack ashPokemon garyPokemon apAttack : tail (garyTeam game)
+    ashTeam =  processAttack garyPokemon ashPokemon gpAttack firstSeed : tail (ashTeam game), --Se lee, el pokemon de Gary ataca al pokemon de ash con el ataque gpAttack
+    garyTeam = processAttack ashPokemon garyPokemon apAttack secondSeed: tail (garyTeam game)
 }
 
 checkFirstAttack :: Pokemon -> Pokemon -> Game -> Game
@@ -166,15 +183,15 @@ checkMaybeAttack :: Maybe PokemonAttack -> PokemonAttack
 checkMaybeAttack Nothing = PokemonAttack {attackName = "Placaje", base = 25, pokType = Normal, attackType = Physic, movsLeft = 10}
 checkMaybeAttack (Just pa) = pa
 
-garyAttackPick :: Pokemon -> Int
-garyAttackPick pokemon =
+garyAttackPick :: Pokemon -> Int -> Int
+garyAttackPick pokemon seed =
   let
     pokemonMovs = movs pokemon
     nonEmptyAttacks = Data.Sequence.filter stillHasMoves pokemonMovs
-    number = 0 -- TODO random number
+    number = randomAttack seed (0, Data.Sequence.length nonEmptyAttacks - 1)
   in
-    if Data.Sequence.null nonEmptyAttacks then 4
-    else  checkMaybeGaryValue (Data.Sequence.elemIndexL (checkMaybeAttack(Data.Sequence.lookup number nonEmptyAttacks)) pokemonMovs)
+    if Data.Sequence.null nonEmptyAttacks then 5
+    else checkMaybeGaryValue (Data.Sequence.elemIndexL (checkMaybeAttack(Data.Sequence.lookup number nonEmptyAttacks)) pokemonMovs)
 
 stillHasMoves :: PokemonAttack -> Bool
 stillHasMoves pokemonAttack = movsLeft pokemonAttack > 0
@@ -187,13 +204,15 @@ fightPokemon game attackNumber
         $ swapDefetedPokemon
         $ substractAttackMov attackNumber garyAttackNumber
         $ fight ashPokemon garyPokemon apAttack gpAttack
-        $ checkFirstAttack ashPokemon garyPokemon game
+        $ checkFirstAttack ashPokemon garyPokemon 
+        $ removeSeed game
     | otherwise = game
     where
       ashPokemon = head (ashTeam game)
       garyPokemon = head (garyTeam game)
       apAttack = checkMaybeAttack (Data.Sequence.lookup attackNumber (movs ashPokemon))
-      garyAttackNumber = garyAttackPick garyPokemon
+      seed = head (getSeeds 1 game)
+      garyAttackNumber = garyAttackPick garyPokemon seed
       gpAttack = checkMaybeAttack (Data.Sequence.lookup garyAttackNumber (movs garyPokemon))
 
 isCoordCorrect :: Int -> Bool
@@ -223,5 +242,5 @@ transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
       -- Running -> playerTurn game $ mousePosAsCellCoord mousePos
       Running -> playerTurn game (mousePosAsCellCoord mousePos)
-      GameOver _ -> initialGame
-transformGame _ game = game
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame _ game = game 
