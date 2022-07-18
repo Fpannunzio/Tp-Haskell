@@ -1,6 +1,7 @@
 module Game where
 import Types
 import Random
+
 data Game = Game { firstPlayer :: Player
                  , ashTeam :: PokemonTeam
                  , garyTeam :: PokemonTeam
@@ -42,8 +43,8 @@ getPlayerPokemon Gary game = head (garyTeam game)
 
 initialGame :: Int -> Game
 initialGame seed = Game { firstPlayer = Ash
-                   , ashTeam = generatePokemonTeamP 2
-                   , garyTeam = generatePokemonTeamC 2
+                   , ashTeam = generatePokemonTeamAsh
+                   , garyTeam = generatePokemonTeamGary
                    , gameState = Running
                    , seeds = numbers
                    }

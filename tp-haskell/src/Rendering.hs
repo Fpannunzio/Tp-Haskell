@@ -2,12 +2,15 @@ module Rendering where
 
 import Data.Array
 import Data.Foldable (toList)
-import Data.Sequence ( fromList, Seq)
+import Data.Sequence
+import Data.Maybe
 
 import Graphics.Gloss
 
 import Game
 import Types
+
+type Sprites = Seq Picture
 
 boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
@@ -36,7 +39,6 @@ attackTextScale = (0.4, 0.4)
 defaultImgScale :: Position
 defaultImgScale = (2.5, 2.5)
 
-
 playerColor :: Player -> Color
 playerColor Ash = makeColorI 255 50 50 255
 playerColor Gary = makeColorI 50 100 255 255
@@ -54,8 +56,8 @@ statusPosition = intToFloat screenWidth * 0.25
 winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
 
-attackPositions :: [Position]
-attackPositions = [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
+attackPositions :: Seq Position
+attackPositions = fromList [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
 
 pokemonStatusColor :: PokemonStatus -> Color
 pokemonStatusColor Poisoned = makeColorI 153 0 153 255
@@ -74,17 +76,23 @@ pokemonTypeColor Agua = makeColorI 0 0 255 255
 pokemonTypeColor Hierba = makeColorI 0 255 0 255
 
 
+getPokemonSprite :: Sprites -> Pokemon -> Picture
+getPokemonSprite sprites pokemon =
+  Data.Maybe.fromMaybe
+  Blank (Data.Sequence.lookup (pokedexNumber pokemon - 1) sprites)
+
+
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
-gameRunningPicture :: [Picture] -> Pokemon -> Pokemon -> Picture
-gameRunningPicture sprites ashPokemon garyPokemon =
+gameRunningPicture :: Sprites -> Sprites -> Pokemon -> Pokemon -> Picture
+gameRunningPicture ashSprites garySprites ashPokemon garyPokemon =
     pictures [
-              renderPokemon Gary garyPokemon squirtleSprite
-            , renderPokemon Ash ashPokemon charmanderSprite
+              renderPokemon Gary garyPokemon garyPokemonSprite
+            , renderPokemon Ash ashPokemon ashPokemonSprite
             , pokemonAttacksBoard (movs ashPokemon)
             , color boardGridColor boardGrid
              ]
-    where charmanderSprite = head sprites
-          squirtleSprite = sprites !! 1
+    where ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
+          garyPokemonSprite = getPokemonSprite garySprites garyPokemon
 
 renderPokemonName :: Float -> Color -> String -> Picture
 renderPokemonName position currentColor name =
@@ -123,7 +131,7 @@ renderPokemonLife position currentPs maxPs =
   ]
 
 renderPokemonSprite :: Float -> Picture -> Picture
-renderPokemonSprite position sprite = 
+renderPokemonSprite position sprite =
   uncurry translate (position, spriteHeight)
   $ uncurry scale defaultImgScale sprite
 
@@ -168,7 +176,7 @@ renderPokemonAttack pokemonAttack pos =
 -- Translate te pone el pixel abajo
 -- IMPORTANTE primero escalar y despues traducir
 pokemonAttacksBoard :: PokemonMovs -> Picture
-pokemonAttacksBoard pokeMovs = pictures (zipWith renderPokemonAttack (toList pokeMovs) attackPositions)
+pokemonAttacksBoard pokeMovs = pictures $ toList (Data.Sequence.zipWith renderPokemonAttack pokeMovs attackPositions)
 -- pokemonAttacksBoard ashPokemon  =  pictures (map (uncurry translate  . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
 
 boardAsGameOverPicture :: Player -> Picture
@@ -176,10 +184,10 @@ boardAsGameOverPicture winner = uncurry translate winnerPosition
                      $ color (playerColor winner)
                      $ text (show winner ++ " wins")
 
-gameAsPicture :: [Picture] -> Game -> Picture
-gameAsPicture sprites game = translate (fromIntegral screenWidth * (-0.5))
+gameAsPicture :: Sprites -> Sprites -> Game -> Picture
+gameAsPicture ashSprites garySprites game = translate (fromIntegral screenWidth * (-0.5))
                                (fromIntegral screenHeight * (-0.5))
                                frame
     where frame = case gameState game of
-                    Running -> gameRunningPicture sprites (getPlayerPokemon Ash game) (getPlayerPokemon Gary game)
+                    Running -> gameRunningPicture ashSprites garySprites (getPlayerPokemon Ash game) (getPlayerPokemon Gary game)
                     GameOver winner -> boardAsGameOverPicture winner
