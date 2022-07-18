@@ -36,6 +36,10 @@ removeSeed game =
     seeds = tail (seeds game)
   }
 
+getPlayerPokemon :: Player -> Game -> Pokemon
+getPlayerPokemon Ash game = head (ashTeam game)
+getPlayerPokemon Gary game = head (garyTeam game)
+
 initialGame :: Int -> Game
 initialGame seed = Game { firstPlayer = Ash
                    , ashTeam = generatePokemonTeamP 2

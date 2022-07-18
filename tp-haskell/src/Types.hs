@@ -21,6 +21,14 @@ data PokemonStat = Attack | Defense | SpecialAttack | SpecialDefense | Speed | C
 
 type PokemonStats = [PokemonStat]
 
+boostStat :: PokemonStat -> Float -> PokemonStatistics -> PokemonStatistics
+boostStat Attack mult stats = stats { attack = multiplyAndFloor (attack stats)  mult }
+boostStat Defense mult stats = stats{ defense = multiplyAndFloor (defense stats) mult }
+boostStat SpecialAttack mult stats = stats { spAttack = multiplyAndFloor (spAttack stats) mult }
+boostStat SpecialDefense mult stats = stats { spDefense = multiplyAndFloor (spDefense stats) mult }
+boostStat Speed mult stats = stats { speed = multiplyAndFloor (speed stats) mult }
+boostStat Crit mult stats = stats { crit = crit stats * mult }
+
 data PokemonStatus = Poisoned | Paralized | Burned deriving (Eq, Show)
 
 poisonedPorc :: Float
@@ -52,8 +60,7 @@ data MovParams =
     multiplier :: Float
   , upgradedStats :: PokemonStats } |
   StatusMov {
-    statusType :: PokemonStatus
-  } |
+    statusType :: PokemonStatus} |
   ChangeMov
  deriving (Eq, Show)
 
@@ -83,7 +90,6 @@ otherPlayer :: Player -> Player
 otherPlayer Ash = Gary
 otherPlayer Gary = Ash
 
-
 type Cell = String
 
 data State = Running | GameOver Player deriving (Eq, Show)
@@ -101,8 +107,8 @@ typeTable _ _ = 1.0
 intToFloat :: Int -> Float
 intToFloat number = fromIntegral number :: Float
 
-multiplyByFloor :: Int -> Float -> Int
-multiplyByFloor number mult = floor (intToFloat number * mult)
+multiplyAndFloor :: Int -> Float -> Int
+multiplyAndFloor number mult = floor (intToFloat number * mult)
 
 generatePokemonTeamP :: Int -> PokemonTeam
 generatePokemonTeamP 0 = []
@@ -113,8 +119,8 @@ generatePokemonTeamP n =
   , status = Nothing
   , movs = fromList [
     PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
-  , PokemonMov {attackName = "Envenenar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = StatusMov {statusType = Poisoned}}
-  , PokemonMov {attackName = "Paralizar", movType = Buff, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = BuffMov {multiplier = 1.5, upgradedStats = [Attack, SpecialAttack]}}
+  , PokemonMov {attackName = "Ascuas", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = DmgMov {power = 25, dmgType = Special}}
+  , PokemonMov {attackName = "Danza Espada", movType = Buff, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = BuffMov {multiplier = 1.5, upgradedStats = [Attack, SpecialAttack]}}
   , PokemonMov {attackName = "Quemar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = StatusMov {statusType = Burned}}]
   } : generatePokemonTeamP(n-1)
 
@@ -123,11 +129,11 @@ generatePokemonTeamC 0 = []
 generatePokemonTeamC n =
   Pokemon {
     name = "Squirtle"
-  , stats = PokemonStatistics {pokemonType = [Agua], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.05}
+  , stats = PokemonStatistics {pokemonType = [Agua], maxPs = 100, currentPs = 100, attack = 15, defense = 7, spAttack = 6, spDefense = 5, speed = 10, crit = 0.005}
   , status = Nothing
   , movs = fromList [
     PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
-  , PokemonMov {attackName = "Ascuas", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = DmgMov {power = 25, dmgType = Physic}}
-  , PokemonMov {attackName = "Furia", movType = Buff, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = BuffMov {multiplier = 1.5, upgradedStats = [Attack, SpecialAttack]}}
-  , PokemonMov {attackName = "Ascuas", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Fuego, movParams = StatusMov {statusType = Burned}}]
+  , PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
+  , PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
+  , PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}]
   }: generatePokemonTeamC(n-1)
