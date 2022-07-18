@@ -15,5 +15,7 @@ backgroundColor = makeColor 0 0 0 255
 
 main :: IO ()
 main = do
+    charmanderImg <- loadBMP "assets/charmander.bmp"
+    squirtleImg <- loadBMP "assets/squirtle.bmp"
     seed <- randomIO :: IO Int
-    play window backgroundColor 30 (initialGame seed)  gameAsPicture transformGame (const id)
+    play window backgroundColor 30 (initialGame seed) (gameAsPicture [charmanderImg, squirtleImg]) transformGame (const id)

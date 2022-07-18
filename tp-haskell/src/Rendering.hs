@@ -24,11 +24,18 @@ lifeBarMaxLength = intToFloat screenWidth * 0.15
 lifeHeight :: Float
 lifeHeight = intToFloat screenHeight * 0.8 :: Float
 
+spriteHeight :: Float
+spriteHeight = intToFloat screenHeight * 0.6 :: Float
+
 defaultTextScale :: Position
 defaultTextScale = (0.3, 0.3)
 
 attackTextScale :: Position
 attackTextScale = (0.4, 0.4)
+
+defaultImgScale :: Position
+defaultImgScale = (2.5, 2.5)
+
 
 playerColor :: Player -> Color
 playerColor Ash = makeColorI 255 50 50 255
@@ -37,6 +44,9 @@ playerColor Gary = makeColorI 50 100 255 255
 playerPosition :: Player -> Float
 playerPosition Ash = intToFloat screenWidth * 0.05
 playerPosition Gary = intToFloat screenWidth * 0.6
+
+spritePosition :: Float
+spritePosition = intToFloat screenWidth * 0.15
 
 statusPosition :: Float
 statusPosition = intToFloat screenWidth * 0.25
@@ -65,14 +75,16 @@ pokemonTypeColor Hierba = makeColorI 0 255 0 255
 
 
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
-gameRunningPicture :: Pokemon -> Pokemon -> Picture
-gameRunningPicture ashPokemon garyPokemon =
+gameRunningPicture :: [Picture] -> Pokemon -> Pokemon -> Picture
+gameRunningPicture sprites ashPokemon garyPokemon =
     pictures [
-              renderPokemon Gary garyPokemon
-            , renderPokemon Ash ashPokemon
+              renderPokemon Gary garyPokemon squirtleSprite
+            , renderPokemon Ash ashPokemon charmanderSprite
             , pokemonAttacksBoard (movs ashPokemon)
             , color boardGridColor boardGrid
              ]
+    where charmanderSprite = head sprites
+          squirtleSprite = sprites !! 1
 
 renderPokemonName :: Float -> Color -> String -> Picture
 renderPokemonName position currentColor name =
@@ -80,6 +92,14 @@ renderPokemonName position currentColor name =
     $ uncurry scale defaultTextScale
     $ color currentColor
     $ text name
+
+renderPokemonStatus :: Float -> Maybe PokemonStatus -> Picture
+renderPokemonStatus position Nothing = Blank
+renderPokemonStatus position (Just status) =
+  translate position nameHeight
+  $ uncurry scale defaultTextScale
+  $ color (pokemonStatusColor status)
+  $ text (statusText status)
 
 calculateLifeBarLength :: Float -> Int -> Int -> Float
 calculateLifeBarLength initPosition currentPs maxPs = initPosition + lifeBarMaxLength * intToFloat currentPs / intToFloat maxPs
@@ -102,20 +122,20 @@ renderPokemonLife position currentPs maxPs =
   $ text (lifeString currentPs maxPs)
   ]
 
-renderPokemonStatus :: Float -> Maybe PokemonStatus -> Picture
-renderPokemonStatus position Nothing = Blank
-renderPokemonStatus position (Just status) = 
-  translate position nameHeight
-  $ uncurry scale defaultTextScale
-  $ color (pokemonStatusColor status) 
-  $ text (statusText status)
+renderPokemonSprite :: Float -> Picture -> Picture
+renderPokemonSprite position sprite = 
+  uncurry translate (position, spriteHeight)
+  $ uncurry scale defaultImgScale sprite
 
 
-renderPokemon :: Player -> Pokemon -> Picture
-renderPokemon player pokemon = pictures [
+renderPokemon :: Player -> Pokemon -> Picture -> Picture
+renderPokemon player pokemon sprite = pictures [
+
       renderPokemonName (playerPosition player) (playerColor player) (name pokemon)
-    , renderPokemonStatus (playerPosition player + statusPosition) (status pokemon) 
-    , renderPokemonLife (playerPosition player) (currentPs (stats pokemon)) (maxPs (stats pokemon))]
+    , renderPokemonStatus (playerPosition player + statusPosition) (status pokemon)
+    , renderPokemonLife (playerPosition player) (currentPs (stats pokemon)) (maxPs (stats pokemon))
+    , renderPokemonSprite (playerPosition player + spritePosition) sprite
+    ]
 
 boardGrid :: Picture
 boardGrid =
@@ -156,10 +176,10 @@ boardAsGameOverPicture winner = uncurry translate winnerPosition
                      $ color (playerColor winner)
                      $ text (show winner ++ " wins")
 
-gameAsPicture :: Game -> Picture
-gameAsPicture game = translate (fromIntegral screenWidth * (-0.5))
+gameAsPicture :: [Picture] -> Game -> Picture
+gameAsPicture sprites game = translate (fromIntegral screenWidth * (-0.5))
                                (fromIntegral screenHeight * (-0.5))
                                frame
     where frame = case gameState game of
-                    Running -> gameRunningPicture (head (ashTeam game)) (head (garyTeam game))
+                    Running -> gameRunningPicture sprites (getPlayerPokemon Ash game) (getPlayerPokemon Gary game)
                     GameOver winner -> boardAsGameOverPicture winner
