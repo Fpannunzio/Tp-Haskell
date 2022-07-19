@@ -9,6 +9,7 @@ import Graphics.Gloss
 
 import Game
 import Types
+import GHC.Base (Float)
 
 type Sprites = S.Seq Picture
 
@@ -16,7 +17,7 @@ boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
 
 nameHeight :: Float
-nameHeight = intToFloat screenHeight * 0.9 :: Float
+nameHeight = intToFloat screenHeight * 0.95 :: Float
 
 lifeColor :: Color
 lifeColor = makeColorI 0 255 0 255
@@ -25,10 +26,13 @@ lifeBarMaxLength :: Float
 lifeBarMaxLength = intToFloat screenWidth * 0.15
 
 lifeHeight :: Float
-lifeHeight = intToFloat screenHeight * 0.8 :: Float
+lifeHeight = intToFloat screenHeight * 0.85 :: Float
 
 spriteHeight :: Float
-spriteHeight = intToFloat screenHeight * 0.65 :: Float
+spriteHeight = intToFloat screenHeight * 0.6 :: Float
+
+pokeballHeight :: Float
+pokeballHeight = intToFloat screenHeight * 0.80 :: Float
 
 defaultTextScale :: Position
 defaultTextScale = (0.3, 0.3)
@@ -46,6 +50,14 @@ playerColor Gary = makeColorI 50 100 255 255
 playerPosition :: Player -> Float
 playerPosition Ash = intToFloat screenWidth * 0.05
 playerPosition Gary = intToFloat screenWidth * 0.6
+
+pokeballPosition :: Float
+pokeballPosition = intToFloat screenWidth * 0.03
+
+renderPokeball :: Picture
+renderPokeball = pictures [
+  circle (intToFloat screenWidth * 0.01)
+  , circle (intToFloat screenWidth * 0.005)]
 
 spritePosition :: Float
 spritePosition = intToFloat screenWidth * 0.15
@@ -88,12 +100,16 @@ gameRunningPicture ashSprites garySprites game =
     pictures [
               renderPokemon Gary garyPokemon garyPokemonSprite
             , renderPokemon Ash ashPokemon ashPokemonSprite
+            , renderAlivePokemon Gary garyTeam
+            , renderAlivePokemon Ash ashTeam
             , pokemonAttacksBoard (movs ashPokemon)
             , color boardGridColor boardGrid
              ]
-    where 
+    where
           ashPokemon = getPlayerPokemon Ash game
           garyPokemon = getPlayerPokemon Gary game
+          ashTeam = getPlayerTeam Ash game
+          garyTeam = getPlayerTeam Gary game
           ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
           garyPokemonSprite = getPokemonSprite garySprites garyPokemon
 
@@ -147,6 +163,22 @@ renderPokemon player pokemon sprite = pictures [
     , renderPokemonLife (playerPosition player) (currentPs (stats pokemon)) (maxPs (stats pokemon))
     , renderPokemonSprite (playerPosition player + spritePosition) sprite
     ]
+
+drawPokeball :: Pokemon -> Picture
+drawPokeball pokemon =
+  if currentPs (stats pokemon) > 0 then Color (makeColorI 255 0 0 255) renderPokeball
+  else Color (greyN 0.5) renderPokeball
+
+recursiveTeamRendering :: [Pokemon] -> Float -> [Picture]
+recursiveTeamRendering [] position = []
+recursiveTeamRendering (pok:pokTeam) position = uncurry translate (position, pokeballHeight) (drawPokeball pok) : recursiveTeamRendering pokTeam (position + pokeballPosition)
+
+renderAlivePokemon :: Player -> PokemonTeam -> Picture
+renderAlivePokemon player team =
+  let
+    position = playerPosition player
+  in
+    pictures (recursiveTeamRendering (toList team) (position + (pokeballPosition / 2)))
 
 boardGrid :: Picture
 boardGrid =
