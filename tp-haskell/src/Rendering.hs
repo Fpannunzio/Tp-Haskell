@@ -2,7 +2,7 @@ module Rendering where
 
 import Data.Array
 import Data.Foldable (toList)
-import Data.Sequence
+import qualified Data.Sequence as S
 import Data.Maybe
 
 import Graphics.Gloss
@@ -10,7 +10,7 @@ import Graphics.Gloss
 import Game
 import Types
 
-type Sprites = Seq Picture
+type Sprites = S.Seq Picture
 
 boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
@@ -28,7 +28,7 @@ lifeHeight :: Float
 lifeHeight = intToFloat screenHeight * 0.8 :: Float
 
 spriteHeight :: Float
-spriteHeight = intToFloat screenHeight * 0.6 :: Float
+spriteHeight = intToFloat screenHeight * 0.65 :: Float
 
 defaultTextScale :: Position
 defaultTextScale = (0.3, 0.3)
@@ -37,7 +37,7 @@ attackTextScale :: Position
 attackTextScale = (0.4, 0.4)
 
 defaultImgScale :: Position
-defaultImgScale = (2.5, 2.5)
+defaultImgScale = (2, 2)
 
 playerColor :: Player -> Color
 playerColor Ash = makeColorI 255 50 50 255
@@ -56,8 +56,8 @@ statusPosition = intToFloat screenWidth * 0.25
 winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
 
-attackPositions :: Seq Position
-attackPositions = fromList [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
+attackPositions :: S.Seq Position
+attackPositions = S.fromList [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
 
 pokemonStatusColor :: PokemonStatus -> Color
 pokemonStatusColor Poisoned = makeColorI 153 0 153 255
@@ -79,19 +79,22 @@ pokemonTypeColor Hierba = makeColorI 0 255 0 255
 getPokemonSprite :: Sprites -> Pokemon -> Picture
 getPokemonSprite sprites pokemon =
   Data.Maybe.fromMaybe
-  Blank (Data.Sequence.lookup (pokedexNumber pokemon - 1) sprites)
+  Blank (S.lookup (pokedexNumber pokemon - 1) sprites)
 
 
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
-gameRunningPicture :: Sprites -> Sprites -> Pokemon -> Pokemon -> Picture
-gameRunningPicture ashSprites garySprites ashPokemon garyPokemon =
+gameRunningPicture :: Sprites -> Sprites -> Game -> Picture
+gameRunningPicture ashSprites garySprites game =
     pictures [
               renderPokemon Gary garyPokemon garyPokemonSprite
             , renderPokemon Ash ashPokemon ashPokemonSprite
             , pokemonAttacksBoard (movs ashPokemon)
             , color boardGridColor boardGrid
              ]
-    where ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
+    where 
+          ashPokemon = getPlayerPokemon Ash game
+          garyPokemon = getPlayerPokemon Gary game
+          ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
           garyPokemonSprite = getPokemonSprite garySprites garyPokemon
 
 renderPokemonName :: Float -> Color -> String -> Picture
@@ -176,7 +179,7 @@ renderPokemonAttack pokemonAttack pos =
 -- Translate te pone el pixel abajo
 -- IMPORTANTE primero escalar y despues traducir
 pokemonAttacksBoard :: PokemonMovs -> Picture
-pokemonAttacksBoard pokeMovs = pictures $ toList (Data.Sequence.zipWith renderPokemonAttack pokeMovs attackPositions)
+pokemonAttacksBoard pokeMovs = pictures $ toList (S.zipWith renderPokemonAttack pokeMovs attackPositions)
 -- pokemonAttacksBoard ashPokemon  =  pictures (map (uncurry translate  . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
 
 boardAsGameOverPicture :: Player -> Picture
@@ -189,5 +192,5 @@ gameAsPicture ashSprites garySprites game = translate (fromIntegral screenWidth 
                                (fromIntegral screenHeight * (-0.5))
                                frame
     where frame = case gameState game of
-                    Running -> gameRunningPicture ashSprites garySprites (getPlayerPokemon Ash game) (getPlayerPokemon Gary game)
+                    Running -> gameRunningPicture ashSprites garySprites game
                     GameOver winner -> boardAsGameOverPicture winner
