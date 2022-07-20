@@ -9,15 +9,38 @@ import Graphics.Gloss
 
 import Game
 import Types
-import GHC.Base (Float)
 
 type Sprites = S.Seq Picture
 
 boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
 
+gameLogoPosition :: Position
+gameLogoPosition = (intToFloat screenWidth * 0.5 :: Float, intToFloat screenHeight * 0.75 :: Float)
+
+textColor :: Color
+textColor = makeColorI 255 255 0 255
+
+firstInstructions :: String
+firstInstructions = "Click on the attack you want to use"
+
+firstInstructionsPosition :: Position
+firstInstructionsPosition = (intToFloat screenWidth * 0.10 :: Float, intToFloat screenHeight * 0.35 :: Float)
+
+secondInstructions :: String
+secondInstructions = "or use [1-6] to change your pokemon"
+
+secondInstructionsPosition :: Position
+secondInstructionsPosition = (intToFloat screenWidth * 0.10 :: Float, intToFloat screenHeight * 0.25 :: Float)
+
+thirdInstructions :: String
+thirdInstructions = "Click anywhere button to continue"
+
+thirdInstructionsPosition :: Position
+thirdInstructionsPosition = (intToFloat screenWidth * 0.10 :: Float, intToFloat screenHeight * 0.10 :: Float)
+
 nameHeight :: Float
-nameHeight = intToFloat screenHeight * 0.95 :: Float
+nameHeight = intToFloat screenHeight * 0.9 :: Float
 
 lifeColor :: Color
 lifeColor = makeColorI 0 255 0 255
@@ -29,7 +52,7 @@ lifeHeight :: Float
 lifeHeight = intToFloat screenHeight * 0.85 :: Float
 
 spriteHeight :: Float
-spriteHeight = intToFloat screenHeight * 0.6 :: Float
+spriteHeight = intToFloat screenHeight * 0.65 :: Float
 
 pokeballHeight :: Float
 pokeballHeight = intToFloat screenHeight * 0.80 :: Float
@@ -40,8 +63,11 @@ defaultTextScale = (0.3, 0.3)
 attackTextScale :: Position
 attackTextScale = (0.4, 0.4)
 
+logoImgScale :: Position
+logoImgScale = (0.8, 0.8)
+
 defaultImgScale :: Position
-defaultImgScale = (2, 2)
+defaultImgScale = (3, 3)
 
 playerColor :: Player -> Color
 playerColor Ash = makeColorI 255 50 50 255
@@ -63,13 +89,13 @@ spritePosition :: Float
 spritePosition = intToFloat screenWidth * 0.15
 
 statusPosition :: Float
-statusPosition = intToFloat screenWidth * 0.25
+statusPosition = intToFloat screenWidth * 0.2
 
 winnerPosition :: Position
 winnerPosition = (0.0, intToFloat screenHeight * 0.45)
 
 attackPositions :: S.Seq Position
-attackPositions = S.fromList [(cellWidth * 0.05, cellHeight * 1.2), (cellWidth * 1.05, cellHeight * 1.2), (cellWidth * 0.05, cellHeight * 0.2), (cellWidth * 1.05, cellHeight * 0.2)]
+attackPositions = S.fromList [(cellWidth * 0.1, cellHeight * 1.3), (cellWidth * 1.1, cellHeight * 1.3), (cellWidth * 0.1, cellHeight * 0.3), (cellWidth * 1.1, cellHeight * 0.3)]
 
 pokemonStatusColor :: PokemonStatus -> Color
 pokemonStatusColor Poisoned = makeColorI 153 0 153 255
@@ -214,15 +240,33 @@ pokemonAttacksBoard :: PokemonMovs -> Picture
 pokemonAttacksBoard pokeMovs = pictures $ toList (S.zipWith renderPokemonAttack pokeMovs attackPositions)
 -- pokemonAttacksBoard ashPokemon  =  pictures (map (uncurry translate  . uncurry scale defaultTextScale . color ashColor . Text . attackName) (movs ashPokemon))
 
-boardAsGameOverPicture :: Player -> Picture
-boardAsGameOverPicture winner = uncurry translate winnerPosition
+renderWinner :: Player -> Picture
+renderWinner winner = uncurry translate winnerPosition
                      $ color (playerColor winner)
                      $ text (show winner ++ " wins")
 
-gameAsPicture :: Sprites -> Sprites -> Game -> Picture
-gameAsPicture ashSprites garySprites game = translate (fromIntegral screenWidth * (-0.5))
+renderGameLogo :: Picture -> Picture
+renderGameLogo logo = uncurry translate gameLogoPosition $ uncurry scale logoImgScale logo
+
+renderInstructions :: String -> Position -> Picture 
+renderInstructions instruction insPosition = 
+  uncurry translate insPosition 
+  $ uncurry scale defaultTextScale
+  $ color textColor 
+  $ text instruction
+
+renderInitialState ::Picture -> Picture
+renderInitialState gameLogo = pictures [
+  renderGameLogo gameLogo,
+  renderInstructions firstInstructions firstInstructionsPosition,
+  renderInstructions secondInstructions secondInstructionsPosition,
+  renderInstructions thirdInstructions thirdInstructionsPosition]
+
+gameAsPicture :: Picture -> Sprites -> Sprites -> Game -> Picture
+gameAsPicture gameLogo ashSprites garySprites game = translate (fromIntegral screenWidth * (-0.5))
                                (fromIntegral screenHeight * (-0.5))
                                frame
     where frame = case gameState game of
+                    InitialScreen -> renderInitialState gameLogo
                     Running -> gameRunningPicture ashSprites garySprites game
-                    GameOver winner -> boardAsGameOverPicture winner
+                    GameOver winner -> renderWinner winner

@@ -22,9 +22,10 @@ retrieveSprites (Just sprites) = sprites
 
 main :: IO ()
 main = do
+    gameLogo <- loadBMP "assets/gameLogo.bmp"
     ashImagesFile <- readFile "assets/ashImagesFile"
     garyImagesFile <- readFile "assets/garyImagesFile"
     seed <- randomIO :: IO Int
     ashImages <- sequence $ loadImages $ lines ashImagesFile
     garyImages <- sequence $ loadImages $ lines garyImagesFile
-    play window backgroundColor 30 (initialGame seed) (gameAsPicture (fromList ashImages) (fromList garyImages)) transformGame (const id)
+    play window backgroundColor 30 (initialGame seed) (gameAsPicture gameLogo (fromList ashImages) (fromList garyImages)) transformGame (const id)

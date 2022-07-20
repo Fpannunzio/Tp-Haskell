@@ -15,10 +15,10 @@ n :: Int
 n = 2
 
 screenWidth :: Int
-screenWidth = 960
+screenWidth = 1120
 
 screenHeight :: Int
-screenHeight = 640
+screenHeight = 840
 
 cellWidth :: Float
 cellWidth = fromIntegral screenWidth / fromIntegral n
@@ -64,7 +64,7 @@ initialGame seed = Game { firstPlayer = Ash
                    , garyTeam = generatePokemonTeamGary
                    , ashPokemon = 0
                    , garyPokemon = 0
-                   , gameState = Running
+                   , gameState = InitialScreen
                    , seeds = numbers
                    }
     where numbers = randomList seed

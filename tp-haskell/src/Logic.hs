@@ -335,30 +335,40 @@ mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / ce
 
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
+      InitialScreen -> game {gameState = Running}
       Running -> processAction game $ Movement $ cellCordToAttack $ mousePosAsCellCoord mousePos
       GameOver _ -> initialGame (head (getSeeds 1 game))
 transformGame (EventKey (Char '1') Up _ _) game = 
     case gameState game of
+      InitialScreen -> game 
       Running -> processAction game $ Change 0
       GameOver _ -> initialGame (head (getSeeds 1 game))
 transformGame (EventKey (Char '2') Up _ _) game = 
     case gameState game of
+      InitialScreen -> game 
       Running -> processAction game $ Change 1
       GameOver _ -> initialGame (head (getSeeds 1 game))
 transformGame (EventKey (Char '3') Up _ _) game = 
     case gameState game of
+      InitialScreen -> game 
       Running -> processAction game $ Change 2
       GameOver _ -> initialGame (head (getSeeds 1 game))
 transformGame (EventKey (Char '4') Up _ _) game = 
     case gameState game of
+      InitialScreen -> game 
       Running -> processAction game $ Change 3
       GameOver _ -> initialGame (head (getSeeds 1 game))
 transformGame (EventKey (Char '5') Up _ _) game = 
     case gameState game of
+      InitialScreen -> game 
       Running -> processAction game $ Change 4
       GameOver _ -> initialGame (head (getSeeds 1 game))
 transformGame (EventKey (Char '6') Up _ _) game = 
     case gameState game of
+      InitialScreen -> game 
       Running -> processAction game $ Change 5
       GameOver _ -> initialGame (head (getSeeds 1 game))     
 transformGame _ game = game
+    -- case gameState game of
+    --   InitialScreen -> game {gameState = Running}
+    --   _ -> game

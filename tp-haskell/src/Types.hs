@@ -99,7 +99,7 @@ type Cell = String
 
 data Action  = Movement Int | Change Int 
 
-data State = Running | GameOver Player deriving (Eq, Show)
+data State = InitialScreen | Running | GameOver Player deriving (Eq, Show)
 
 typeTable :: PokemonType -> PokemonType -> Float
 typeTable Fuego Agua = 0.5
