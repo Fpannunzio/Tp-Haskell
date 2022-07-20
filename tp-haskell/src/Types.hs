@@ -50,7 +50,7 @@ getDefensiveStat :: DmgType -> PokemonStatistics -> Int
 getDefensiveStat Physic pokStats = defense pokStats
 getDefensiveStat Special pokStats = spDefense pokStats
 
-data MovType = Buff | Dmg | Status | Change deriving (Eq, Show)
+data MovType = Buff | Dmg | Status deriving (Eq, Show)
 
 data MovParams =
   DmgMov {
@@ -60,8 +60,7 @@ data MovParams =
     multiplier :: Float
   , upgradedStats :: PokemonStats } |
   StatusMov {
-    statusType :: PokemonStatus} |
-  ChangeMov
+    statusType :: PokemonStatus} 
  deriving (Eq, Show)
 
 data PokemonMov = PokemonMov {
@@ -98,6 +97,8 @@ otherPlayer Gary = Ash
 
 type Cell = String
 
+data Action  = Movement Int | Change Int 
+
 data State = Running | GameOver Player deriving (Eq, Show)
 
 typeTable :: PokemonType -> PokemonType -> Float
@@ -125,7 +126,7 @@ generatePokemonTeamAsh = S.fromList [
   , status = Nothing
   , movs = S.fromList [
     PokemonMov {attackName = "Placaje", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Normal, movParams = DmgMov {power = 25, dmgType = Physic}}
-  , PokemonMov {attackName = "Rayo Solar", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Hierba, movParams = DmgMov {power = 25, dmgType = Special}}
+  , PokemonMov {attackName = "RayoSolar", movType = Dmg, movsLeft = 10, accuracy = 1.0, pokType = Hierba, movParams = DmgMov {power = 25, dmgType = Special}}
   , PokemonMov {attackName = "Envenenar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Hierba, movParams = StatusMov {statusType = Poisoned}}
   , PokemonMov {attackName = "Paralizar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Hierba, movParams = StatusMov {statusType = Paralized}}]
   }

@@ -224,7 +224,6 @@ processMov player pokemonMov game
       Buff -> processBuff player attackingPokemon pokemonMov game
       Dmg ->  processDmg player attackingPokemon defendingPokemon pokemonMov probability game
       Status -> processStatus player defendingPokemon pokemonMov game
-      Change -> game
   | otherwise = game
 
   where seed = getSeed game
@@ -234,13 +233,11 @@ processMov player pokemonMov game
         defendingPokemon = getPlayerPokemon (otherPlayer player) game
 
 -- Actualizo a los dos equipos
-fight :: PokemonMov -> PokemonMov -> Game -> Game
-fight apAttack gpAttack game =
-  -- Tengo que eliminar las dos seeds que ya use 
+fight :: Player -> PokemonMov -> Game -> Game
+fight player apAttack game =
+  -- Tengo que eliminar la seed que use
   removeSeed
-  $ processMov Gary gpAttack
-  $ removeSeed
-  $ processMov Ash apAttack game
+  $ processMov player apAttack game
 
 checkFirstAttack :: Pokemon -> Pokemon -> Game -> Game
 checkFirstAttack ashPokemon garyPokemon game
@@ -279,7 +276,8 @@ battle game ashAttackNumber
         $ swapDefetedPokemon
         $ applyStatusEffect
         $ substractMov ashAttackNumber garyAttackNumber
-        $ fight apAttack gpAttack
+        $ fight Gary gpAttack 
+        $ fight Ash apAttack 
         $ checkFirstAttack ashPokemon garyPokemon
         $ removeSeed game
     | otherwise = game
@@ -291,8 +289,32 @@ battle game ashAttackNumber
       garyAttackNumber = garyAttackPick garyPokemon seed
       gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
 
-isCoordCorrect :: Int -> Bool
-isCoordCorrect x = x >= 0 && x <=3 -- inRange?
+
+change :: Game -> Int -> Game
+change game changeNumber = 
+  let 
+    seed = getSeed game
+    garyPokemon = getPlayerPokemon Gary game
+    garyAttackNumber = garyAttackPick garyPokemon seed
+    gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
+    newGame = game {firstPlayer = Gary, ashPokemon = changeNumber}
+  in
+    checkStillFighting
+    $ applyStatusEffect
+    $ substractMov 7 garyAttackNumber
+    $ fight Gary gpAttack
+    $ removeSeed newGame
+    
+
+isMovCorrect :: Int -> Bool
+isMovCorrect x = x >= 0 && x <=3 -- inRange?
+
+isChangeCorrect :: Int -> Game -> Bool
+isChangeCorrect changeNumber game = 
+  let
+    playerTeam = ashTeam game
+  in
+  changeNumber >= 0 && changeNumber <=5 && not (checkDefeated (playerTeam `S.index` changeNumber))
 
 cellCordToAttack :: (Int, Int) -> Int
 cellCordToAttack cellCord =
@@ -303,12 +325,9 @@ cellCordToAttack cellCord =
     (1, 0) -> 3
     _ -> 4
 
-playerTurn :: Game -> (Int, Int) -> Game
-playerTurn game cellCoord
-    | isCoordCorrect attackNumber = battle game attackNumber
-    | otherwise = game
-    where attackNumber = cellCordToAttack cellCoord
-
+processAction:: Game -> Action -> Game
+processAction game (Movement movNumber) = if isMovCorrect movNumber then battle game movNumber else game
+processAction game (Change changeNumber) = if isChangeCorrect changeNumber game then change game changeNumber else game
 
 mousePosAsCellCoord :: (Float, Float) -> (Int, Int)
 mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / cellWidth),
@@ -316,6 +335,30 @@ mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / ce
 
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
-      Running -> playerTurn game $ mousePosAsCellCoord mousePos
+      Running -> processAction game $ Movement $ cellCordToAttack $ mousePosAsCellCoord mousePos
       GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame (EventKey (Char '1') Up _ _) game = 
+    case gameState game of
+      Running -> processAction game $ Change 0
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame (EventKey (Char '2') Up _ _) game = 
+    case gameState game of
+      Running -> processAction game $ Change 1
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame (EventKey (Char '3') Up _ _) game = 
+    case gameState game of
+      Running -> processAction game $ Change 2
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame (EventKey (Char '4') Up _ _) game = 
+    case gameState game of
+      Running -> processAction game $ Change 3
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame (EventKey (Char '5') Up _ _) game = 
+    case gameState game of
+      Running -> processAction game $ Change 4
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+transformGame (EventKey (Char '6') Up _ _) game = 
+    case gameState game of
+      Running -> processAction game $ Change 5
+      GameOver _ -> initialGame (head (getSeeds 1 game))     
 transformGame _ game = game
