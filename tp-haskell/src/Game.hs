@@ -8,6 +8,7 @@ data Game = Game { firstPlayer :: Player
                  , ashPokemon :: Int
                  , garyPokemon :: Int
                  , gameState :: State
+                 , actions :: [ActionLog]
                  , seeds :: [Int]
                  } deriving (Eq, Show)
 
@@ -58,6 +59,15 @@ updatePlayerCurrentPokemon :: Player -> Int -> Game -> Game
 updatePlayerCurrentPokemon Ash newPokemon game = game {ashPokemon = newPokemon}
 updatePlayerCurrentPokemon Gary newPokemon game = game {garyPokemon = newPokemon}
 
+appendLog :: ActionLog -> Game -> Game
+appendLog log game =
+  let 
+    actionsLogged = actions game
+  in
+  game {
+      actions = log : actionsLogged
+    }
+
 initialGame :: Int -> Game
 initialGame seed = Game { firstPlayer = Ash
                    , ashTeam = generatePokemonTeamAsh
@@ -65,6 +75,7 @@ initialGame seed = Game { firstPlayer = Ash
                    , ashPokemon = 0
                    , garyPokemon = 0
                    , gameState = InitialScreen
+                   , actions = []
                    , seeds = numbers
                    }
     where numbers = randomList seed

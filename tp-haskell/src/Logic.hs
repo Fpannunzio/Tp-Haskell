@@ -7,7 +7,11 @@ import Graphics.Gloss.Interface.Pure.Game
 import Game
 import Types
 import Random
+import Types (Pokemon(currentStatus))
+import Game (Game)
 
+simpleEfectiveness :: Float
+simpleEfectiveness = 1.0
 -- Si el segundo equipo perdio gana el primer jugador siempre
 -- Si el primero perdio y no sali por el primer caso es que el segundo no lo es, gana el segundo jugador
 -- Sino sigue igual
@@ -15,7 +19,7 @@ import Random
 checkPlayerWon :: Bool -> Bool -> Player -> Player -> Game -> Game
 checkPlayerWon _ False firstPlayer _ game = game { gameState = GameOver firstPlayer}
 checkPlayerWon False _ _ secondPlayer game = game { gameState = GameOver secondPlayer}
-checkPlayerWon _ _ _ _ game = game
+checkPlayerWon _ _ _ _ game = game {gameState = ActionLogging}
 
 -- Fijarse si alguna de las dos colecciones es vacias y en caso de serlo poner gameState en gameOver
 checkStillFighting :: Game -> Game
@@ -66,7 +70,7 @@ statusFormula maxPs currentPs mult = toPositive (currentPs - multiplyAndFloor ma
 applyStatusCondition :: Pokemon -> Pokemon
 applyStatusCondition currentPokemon =
   let
-    pokemonStatus = status currentPokemon
+    pokemonStatus = currentStatus currentPokemon
     pokemonStats = stats currentPokemon
     currentPokemonPs = currentPs pokemonStats
     currentPokemonMaxPs = maxPs pokemonStats
@@ -76,6 +80,26 @@ applyStatusCondition currentPokemon =
       Just Burned -> currentPokemon {stats = pokemonStats {currentPs = statusFormula currentPokemonMaxPs currentPokemonPs burnedPorc}}
       _ -> currentPokemon
 
+logStatusAux :: Player -> Pokemon -> PokemonStatus -> Game -> Game
+logStatusAux player pokemon Paralized game = game 
+logStatusAux player pokemon status game =
+  let
+    currentPokemon = getPlayerPokemon player game
+    statusLog = ActionLog {playerInvolved = player, pokemonName = name currentPokemon,
+    logParams = StatusLogParams {statusLog = status}
+    }
+  in
+    appendLog statusLog game
+
+logStatus :: Player -> Game -> Game
+logStatus player game =
+  let 
+    pokemon = getPlayerPokemon player game
+  in
+  case currentStatus pokemon of
+    Just pokStatus -> logStatusAux player pokemon pokStatus game
+    Nothing -> game
+
 applyStatusEffectAux ::Player -> Game -> Game
 applyStatusEffectAux player game =
   let
@@ -83,6 +107,7 @@ applyStatusEffectAux player game =
     pokemon = getPlayerPokemon player game
     team = getPlayerTeam player game
   in
+    logStatus player $
     updatePlayerTeam player (S.update pokemonIndex (applyStatusCondition pokemon) team) game
 
 applyStatusEffect :: Game -> Game
@@ -138,6 +163,7 @@ processBuff player pokemon pokemonMov game =
     pokemonIndex = getPlayerPokemonIndex player game
     team = getPlayerTeam player game
   in
+  logAttackDmg player pokemonMov False simpleEfectiveness False $
   updatePlayerTeam player (S.update pokemonIndex (boostPokemon pokemon pokemonMov) team) game
 
 toPositive :: Int -> Int
@@ -145,20 +171,17 @@ toPositive x
   | x > 0 = x
   | otherwise = 0
 
-calculateStab :: PokemonAttributes -> PokemonType -> Float
-calculateStab attackingAtr attackType = if attackType `elem` attackingAtr then 1.5 else 1
+calculateStab :: PokemonAttributes -> PokemonType -> Bool
+calculateStab attackingAtr attackType = attackType `elem` attackingAtr
 
 calculateEffectiveness :: PokemonAttributes -> PokemonType -> Float
 calculateEffectiveness defendingAtr attackType = product (map (typeTable attackType) defendingAtr)
 
-attackFormula :: Int -> Int -> Int -> Bool -> PokemonAttributes -> PokemonAttributes -> PokemonMov -> Int
-attackFormula attack defense defensivePS isCrit attackingAtr defendingAtr pokemonMov =
+attackFormula :: Int -> Int -> Int -> Int -> Bool -> Bool -> Float -> Int
+attackFormula attackPower attack defense defensivePS isCrit hasStab efectiveness =
   let
-    attackPower = power (movParams pokemonMov)
-    attackType = pokType pokemonMov
     critValue =  if isCrit then 2.0 else 1.0
-    attackStab = calculateStab attackingAtr attackType
-    efectiveness = calculateEffectiveness defendingAtr attackType
+    attackStab = if hasStab then 1.5 else 1.0
   in
   toPositive(defensivePS - toPositive (floor ((intToFloat(attackPower * attack) * attackStab * efectiveness * critValue / intToFloat defense) / 5.0)))
 
@@ -166,24 +189,30 @@ divideIfBurned :: Maybe PokemonStatus -> Int -> Int
 divideIfBurned (Just Burned) attack = multiplyAndFloor attack 0.5
 divideIfBurned _ attack = attack
 
-processAttack :: Pokemon -> Pokemon -> PokemonMov -> Float -> Pokemon
-processAttack attackingPokemon defensivePokemon pokemonMov probability=
+processAttack :: PokemonStatistics -> Maybe PokemonStatus -> PokemonStatistics -> PokemonMov -> Bool -> Bool -> Float -> PokemonStatistics
+processAttack apStats apStatus dpStats pokemonMov isCrit hasStab efectiveness =
   let
-    attackDamageType = dmgType (movParams pokemonMov)
-    apStats = stats attackingPokemon
-    dpStats = stats defensivePokemon
-    attackingPokemonTypes = pokemonType apStats
-    defendingPokemonTypes = pokemonType dpStats
-    isCrit = probability < crit apStats
-    attackingStat = divideIfBurned (status attackingPokemon) (getAttackingStat attackDamageType apStats)
+    attackParams = movParams pokemonMov
+    attackDamageType = dmgType attackParams
+    attackPower = power (movParams pokemonMov)
+    attackingStat = divideIfBurned apStatus (getAttackingStat attackDamageType apStats)
     defensiveStat = getDefensiveStat attackDamageType dpStats
     defensivePS = currentPs dpStats
   in
-    defensivePokemon {
-      stats = dpStats {
-        currentPs = attackFormula attackingStat defensiveStat defensivePS isCrit attackingPokemonTypes defendingPokemonTypes pokemonMov
-      }
+    dpStats {
+        currentPs = attackFormula attackPower attackingStat defensiveStat defensivePS isCrit hasStab efectiveness
     }
+    
+
+logAttackDmg :: Player -> PokemonMov -> Bool -> Float-> Bool -> Game -> Game
+logAttackDmg player pokemonMov attackFailedLog effectivenessLog critLog game =
+  let
+    currentPokemon = getPlayerPokemon player game
+    attackLog = ActionLog {playerInvolved = player, pokemonName = name currentPokemon,
+    logParams = AttackLogParams {attackLogged = attackName pokemonMov, attackFailed = attackFailedLog, effectiveness = effectivenessLog, isCrit = critLog}
+    }
+  in
+    appendLog attackLog game
 
 -- Si ataco Ash el pokemon afectado es el de gary y viceversa
 processDmg :: Player-> Pokemon -> Pokemon -> PokemonMov -> Float -> Game -> Game
@@ -192,13 +221,23 @@ processDmg player attackingPokemon defendingPokemon pokemonAttack probability ga
     defendingPlayer = otherPlayer player
     defendingPokemonIndex = getPlayerPokemonIndex defendingPlayer game
     defendingTeam = getPlayerTeam defendingPlayer game
+    apStats = stats attackingPokemon
+    apStatus = currentStatus attackingPokemon
+    dpStats = stats defendingPokemon
+    attackType = pokType pokemonAttack
+    attackingPokemonTypes = pokemonType apStats
+    defendingPokemonTypes = pokemonType dpStats
+    isCrit = probability < crit apStats
+    hasStab = calculateStab attackingPokemonTypes attackType
+    efectiveness = calculateEffectiveness defendingPokemonTypes attackType
   in
-  updatePlayerTeam defendingPlayer (S.update defendingPokemonIndex (processAttack attackingPokemon defendingPokemon pokemonAttack probability) defendingTeam) game
+    logAttackDmg player pokemonAttack False efectiveness isCrit $
+    updatePlayerTeam defendingPlayer (S.update defendingPokemonIndex (defendingPokemon{stats = processAttack apStats apStatus dpStats pokemonAttack isCrit hasStab efectiveness}) defendingTeam) game
 
 applyStatus :: Pokemon -> PokemonMov -> Pokemon
 applyStatus defendingPokemon pokemonMov =
-    case status defendingPokemon of
-      Nothing -> defendingPokemon { status = Just (statusType (movParams pokemonMov))}
+    case currentStatus defendingPokemon of
+      Nothing -> defendingPokemon { currentStatus = Just (statusType (movParams pokemonMov))}
       _ -> defendingPokemon
 
 processStatus :: Player-> Pokemon -> PokemonMov -> Game -> Game
@@ -208,6 +247,7 @@ processStatus player defendingPokemon pokemonMov game =
     defendingPokemonIndex = getPlayerPokemonIndex defendingPlayer game
     defendingTeam = getPlayerTeam defendingPlayer game
   in
+  logAttackDmg player pokemonMov False simpleEfectiveness False $
   updatePlayerTeam defendingPlayer (S.update defendingPokemonIndex (applyStatus defendingPokemon pokemonMov) defendingTeam) game
 
 checkIfHit :: Float -> PokemonMov -> Bool
@@ -217,21 +257,32 @@ checkIfParalized :: Float -> Maybe PokemonStatus -> Bool
 checkIfParalized prob (Just Paralized) = prob < paralizedChance
 checkIfParalized prob _ = True
 
+logParalized :: Player -> Game -> Game
+logParalized player game =
+  let
+    currentPokemon = getPlayerPokemon player game
+    changeLog = ActionLog {playerInvolved = player, pokemonName = name currentPokemon, logParams = StatusLogParams {statusLog = Paralized}}
+  in
+    appendLog changeLog game
+
 processMov :: Player -> PokemonMov -> Game -> Game
 processMov player pokemonMov game
-  | checkIfHit probability pokemonMov && checkIfParalized probability (status attackingPokemon) =
+  | checkIfHit probability pokemonMov && paralized =
     case movType pokemonMov of
       Buff -> processBuff player attackingPokemon pokemonMov game
       Dmg ->  processDmg player attackingPokemon defendingPokemon pokemonMov probability game
       Status -> processStatus player defendingPokemon pokemonMov game
+  | not (checkIfHit probability pokemonMov) =
+    logAttackDmg player pokemonMov False simpleEfectiveness False game
+  | not paralized =
+    logParalized player game
   | otherwise = game
 
   where seed = getSeed game
         probability = randomProbability seed
-        currentStatus = status attackingPokemon
+        paralized = checkIfParalized probability (currentStatus attackingPokemon)
         attackingPokemon = getPlayerPokemon player game
         defendingPokemon = getPlayerPokemon (otherPlayer player) game
-
 -- Actualizo a los dos equipos
 fight :: Player -> PokemonMov -> Game -> Game
 fight player apAttack game =
@@ -271,29 +322,42 @@ stillHasMoves pokemonMov = movsLeft pokemonMov > 0
 battle :: Game -> Int -> Game
 battle game ashAttackNumber
     -- | not (isCoordCorrect garyAttackNumber) = game --TODO Sacar el pokemon de Gary
-    | stillHasMoves apAttack =
-      checkStillFighting
-        $ swapDefetedPokemon
-        $ applyStatusEffect
-        $ substractMov ashAttackNumber garyAttackNumber
-        $ fight Gary gpAttack 
-        $ fight Ash apAttack 
-        $ checkFirstAttack ashPokemon garyPokemon
-        $ removeSeed game
-    | otherwise = game
-    where
-      ashPokemon = getPlayerPokemon Ash game
-      garyPokemon = getPlayerPokemon Gary game
-      apAttack = checkMaybeAttack (S.lookup ashAttackNumber (movs ashPokemon))
-      seed = getSeed game
-      garyAttackNumber = garyAttackPick garyPokemon seed
-      gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
+  | stillHasMoves apAttack =
+    checkStillFighting
+      $ swapDefetedPokemon
+      $ applyStatusEffect
+      $ substractMov ashAttackNumber garyAttackNumber
+      $ fight Gary gpAttack
+      $ fight Ash apAttack
+      $ checkFirstAttack ashPokemon garyPokemon
+      $ resetActions 
+      $ removeSeed game
+  | otherwise = game
+  where
+    ashPokemon = getPlayerPokemon Ash game
+    garyPokemon = getPlayerPokemon Gary game
+    apAttack = checkMaybeAttack (S.lookup ashAttackNumber (movs ashPokemon))
+    seed = getSeed game
+    garyAttackNumber = garyAttackPick garyPokemon seed
+    gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
 
+logChange :: Pokemon -> Game -> Game
+logChange oldPokemon game =
+  let
+    gameActions = actions game
+    newPokemon = getPlayerPokemon Ash game
+    changeLog = ActionLog {playerInvolved = Ash, pokemonName = name newPokemon, logParams = ChangeLogParams {previousPokemon = name oldPokemon} }
+  in
+    appendLog changeLog game
+
+resetActions :: Game -> Game
+resetActions game = game {actions = []}
 
 change :: Game -> Int -> Game
-change game changeNumber = 
-  let 
+change game changeNumber =
+  let
     seed = getSeed game
+    ashOldPokemon = getPlayerPokemon Ash game
     garyPokemon = getPlayerPokemon Gary game
     garyAttackNumber = garyAttackPick garyPokemon seed
     gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
@@ -303,14 +367,15 @@ change game changeNumber =
     $ applyStatusEffect
     $ substractMov 7 garyAttackNumber
     $ fight Gary gpAttack
+    $ logChange ashOldPokemon
+    $ resetActions 
     $ removeSeed newGame
-    
 
 isMovCorrect :: Int -> Bool
 isMovCorrect x = x >= 0 && x <=3 -- inRange?
 
 isChangeCorrect :: Int -> Game -> Bool
-isChangeCorrect changeNumber game = 
+isChangeCorrect changeNumber game =
   let
     playerTeam = ashTeam game
   in
@@ -333,41 +398,50 @@ mousePosAsCellCoord :: (Float, Float) -> (Int, Int)
 mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / cellWidth),
                               floor ((y + (fromIntegral screenHeight * 0.5)) / cellHeight))
 
+-- validChar :: Char -> Bool
+-- validChar c = 
+
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
-      InitialScreen -> game {gameState = Running}
       Running -> processAction game $ Movement $ cellCordToAttack $ mousePosAsCellCoord mousePos
       GameOver _ -> initialGame (head (getSeeds 1 game))
-transformGame (EventKey (Char '1') Up _ _) game = 
+      _ -> game {gameState = Running}
+transformGame (EventKey (Char '1') Up _ _) game =
     case gameState game of
-      InitialScreen -> game 
       Running -> processAction game $ Change 0
       GameOver _ -> initialGame (head (getSeeds 1 game))
-transformGame (EventKey (Char '2') Up _ _) game = 
+      _ -> game
+transformGame (EventKey (Char '2') Up _ _) game =
     case gameState game of
-      InitialScreen -> game 
       Running -> processAction game $ Change 1
       GameOver _ -> initialGame (head (getSeeds 1 game))
-transformGame (EventKey (Char '3') Up _ _) game = 
+      _ -> game
+transformGame (EventKey (Char '3') Up _ _) game =
     case gameState game of
-      InitialScreen -> game 
       Running -> processAction game $ Change 2
       GameOver _ -> initialGame (head (getSeeds 1 game))
-transformGame (EventKey (Char '4') Up _ _) game = 
+      _ -> game
+transformGame (EventKey (Char '4') Up _ _) game =
     case gameState game of
-      InitialScreen -> game 
       Running -> processAction game $ Change 3
       GameOver _ -> initialGame (head (getSeeds 1 game))
-transformGame (EventKey (Char '5') Up _ _) game = 
+      _ -> game
+transformGame (EventKey (Char '5') Up _ _) game =
     case gameState game of
-      InitialScreen -> game 
       Running -> processAction game $ Change 4
       GameOver _ -> initialGame (head (getSeeds 1 game))
-transformGame (EventKey (Char '6') Up _ _) game = 
+      _ -> game
+transformGame (EventKey (Char '6') Up _ _) game =
     case gameState game of
-      InitialScreen -> game 
       Running -> processAction game $ Change 5
-      GameOver _ -> initialGame (head (getSeeds 1 game))     
+      GameOver _ -> initialGame (head (getSeeds 1 game))
+      _ -> game
+      -- TODO paramertrizr char
+-- transformGame (EventKey (Char c) Up _ _) game =
+--     case gameState game of
+--       Running -> if validChar c then processAction game $ Change charToChange else game
+--       GameOver _ -> initialGame (head (getSeeds 1 game))
+--       _ -> game
 transformGame _ game = game
     -- case gameState game of
     --   InitialScreen -> game {gameState = Running}
