@@ -2,12 +2,13 @@ module Random where
 
 import System.Random
 import Data.List
+import Data.Bifunctor (bimap)
 
 randomList :: Int -> [Int]
 randomList seed = randoms (mkStdGen seed) :: [Int]
 
-randomAttack :: Int -> (Int, Int) -> Int
-randomAttack seed range =
+randomNumericValue :: Int -> (Float, Float) -> Float
+randomNumericValue seed range =
   let
     roll = uniformR range
     rolls = unfoldr (Just . roll)
@@ -15,11 +16,8 @@ randomAttack seed range =
   in
     head (take 1 (rolls pureGen))
 
+randomAttack :: Int -> (Int, Int) -> Int
+randomAttack seed range = floor (randomNumericValue seed (Data.Bifunctor.bimap fromIntegral fromIntegral range))
+
 randomProbability :: Int -> Float
-randomProbability seed =
-  let
-    roll = uniformR (0.0, 1.0)
-    rolls = unfoldr (Just . roll)
-    pureGen = mkStdGen seed
-  in
-    head (take 1 (rolls pureGen))
+randomProbability seed = randomNumericValue seed (0.0, 1.0)

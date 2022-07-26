@@ -114,8 +114,6 @@ otherPlayer :: Player -> Player
 otherPlayer Ash = Gary
 otherPlayer Gary = Ash
 
-type Cell = String
-
 data Action  = Movement Int | Change Int 
 
 data State = InitialScreen | Running | ActionLogging | GameOver Player deriving (Eq, Show)
@@ -129,12 +127,8 @@ typeTable Hierba Fuego = 0.5
 typeTable Hierba Agua = 2.0
 typeTable _ _ = 1.0
 
-
-intToFloat :: Int -> Float
-intToFloat number = fromIntegral number :: Float
-
 multiplyAndFloor :: Int -> Float -> Int
-multiplyAndFloor number mult = floor (intToFloat number * mult)
+multiplyAndFloor number mult = floor (fromIntegral number * mult)
 
 generatePokemonTeamAsh :: PokemonTeam
 generatePokemonTeamAsh = S.fromList [

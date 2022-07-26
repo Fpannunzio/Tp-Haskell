@@ -16,10 +16,10 @@ boardGridColor :: Color
 boardGridColor = makeColorI 255 255 255 255
 
 middleOfScreen :: Float
-middleOfScreen = intToFloat screenHeight * 0.5 :: Float
+middleOfScreen = fromIntegral screenHeight * 0.5 :: Float
 
 gameLogoPosition :: Position
-gameLogoPosition = (intToFloat screenWidth * 0.5 :: Float, intToFloat screenHeight * 0.75 :: Float)
+gameLogoPosition = (fromIntegral screenWidth * 0.5 :: Float, fromIntegral screenHeight * 0.75 :: Float)
 
 textColor :: Color
 textColor = makeColorI 255 255 0 255
@@ -28,37 +28,37 @@ firstInstructions :: String
 firstInstructions = "Click on the attack you want to use"
 
 firstInstructionsPosition :: Position
-firstInstructionsPosition = (intToFloat screenWidth * 0.10 :: Float, intToFloat screenHeight * 0.35 :: Float)
+firstInstructionsPosition = (fromIntegral screenWidth * 0.10 :: Float, fromIntegral screenHeight * 0.35 :: Float)
 
 secondInstructions :: String
 secondInstructions = "or use [1-6] to change your pokemon"
 
 secondInstructionsPosition :: Position
-secondInstructionsPosition = (intToFloat screenWidth * 0.10 :: Float, intToFloat screenHeight * 0.25 :: Float)
+secondInstructionsPosition = (fromIntegral screenWidth * 0.10 :: Float, fromIntegral screenHeight * 0.25 :: Float)
 
 thirdInstructions :: String
 thirdInstructions = "Click anywhere to continue"
 
 thirdInstructionsPosition :: Position
-thirdInstructionsPosition = (intToFloat screenWidth * 0.10 :: Float, intToFloat screenHeight * 0.10 :: Float)
+thirdInstructionsPosition = (fromIntegral screenWidth * 0.10 :: Float, fromIntegral screenHeight * 0.10 :: Float)
 
 nameHeight :: Float
-nameHeight = intToFloat screenHeight * 0.9 :: Float
+nameHeight = fromIntegral screenHeight * 0.9 :: Float
 
 lifeColor :: Color
 lifeColor = makeColorI 0 255 0 255
 
 lifeBarMaxLength :: Float
-lifeBarMaxLength = intToFloat screenWidth * 0.15
+lifeBarMaxLength = fromIntegral screenWidth * 0.15
 
 lifeHeight :: Float
-lifeHeight = intToFloat screenHeight * 0.85 :: Float
+lifeHeight = fromIntegral screenHeight * 0.85 :: Float
 
 spriteHeight :: Float
-spriteHeight = intToFloat screenHeight * 0.65 :: Float
+spriteHeight = fromIntegral screenHeight * 0.65 :: Float
 
 pokeballHeight :: Float
-pokeballHeight = intToFloat screenHeight * 0.80 :: Float
+pokeballHeight = fromIntegral screenHeight * 0.80 :: Float
 
 logHeight :: Float
 logHeight = middleOfScreen - logPosition
@@ -80,28 +80,28 @@ playerColor Ash = makeColorI 255 50 50 255
 playerColor Gary = makeColorI 50 100 255 255
 
 playerPosition :: Player -> Float
-playerPosition Ash = intToFloat screenWidth * 0.05
-playerPosition Gary = intToFloat screenWidth * 0.6
+playerPosition Ash = fromIntegral screenWidth * 0.05
+playerPosition Gary = fromIntegral screenWidth * 0.6
 
 pokeballPosition :: Float
-pokeballPosition = intToFloat screenWidth * 0.03
+pokeballPosition = fromIntegral screenWidth * 0.03
 
 renderPokeball :: Picture
 renderPokeball = pictures [
-  circle (intToFloat screenWidth * 0.01)
-  , circle (intToFloat screenWidth * 0.005)]
+  circle (fromIntegral screenWidth * 0.01)
+  , circle (fromIntegral screenWidth * 0.005)]
 
 logPosition :: Float
-logPosition = intToFloat screenHeight * 0.1
+logPosition = fromIntegral screenHeight * 0.1
 
 spritePosition :: Float
-spritePosition = intToFloat screenWidth * 0.15
+spritePosition = fromIntegral screenWidth * 0.15
 
 statusPosition :: Float
-statusPosition = intToFloat screenWidth * 0.2
+statusPosition = fromIntegral screenWidth * 0.2
 
 winnerPosition :: Position
-winnerPosition = (0.0, intToFloat screenHeight * 0.45)
+winnerPosition = (0.0, fromIntegral screenHeight * 0.45)
 
 attackPositions :: S.Seq Position
 attackPositions = S.fromList [(cellWidth * 0.1, cellHeight * 1.3), (cellWidth * 1.1, cellHeight * 1.3), (cellWidth * 0.1, cellHeight * 0.3), (cellWidth * 1.1, cellHeight * 0.3)]
@@ -243,7 +243,7 @@ renderPokemonStatus position (Just status) =
   $ text (statusText status)
 
 calculateLifeBarLength :: Float -> Int -> Int -> Float
-calculateLifeBarLength initPosition currentPs maxPs = initPosition + lifeBarMaxLength * intToFloat currentPs / intToFloat maxPs
+calculateLifeBarLength initPosition currentPs maxPs = initPosition + lifeBarMaxLength * fromIntegral currentPs / fromIntegral maxPs
 
 lifeString :: Int -> Int -> String
 lifeString currentPs maxPs = show currentPs ++ "/" ++ show maxPs
@@ -296,7 +296,7 @@ renderAlivePokemon player team =
 
 divisionLine :: Picture
 divisionLine = line [ (0.0, cellHeight * 2)
-            , (intToFloat screenWidth , middleOfScreen)
+            , (fromIntegral screenWidth , middleOfScreen)
             ]
 
 boardGrid :: Picture
@@ -306,10 +306,10 @@ boardGrid =
             , (cellWidth, cellHeight * 2) -- Linea |
             ]
     , line [ (0.0, 0.0)
-            , (intToFloat screenWidth, 0.0) -- Linea __
+            , (fromIntegral screenWidth, 0.0) -- Linea __
             ]
     , line [ (0.0, cellHeight)
-            , (intToFloat screenWidth, cellHeight) -- Linea --
+            , (fromIntegral screenWidth, cellHeight) -- Linea --
             ]
     , divisionLine
     ]

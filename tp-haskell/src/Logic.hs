@@ -181,7 +181,7 @@ attackFormula attackPower attack defense defensivePS isCrit hasStab efectiveness
     critValue =  if isCrit then 2.0 else 1.0
     attackStab = if hasStab then 1.5 else 1.0
   in
-  toPositive(defensivePS - toPositive (floor ((intToFloat(attackPower * attack) * attackStab * efectiveness * critValue / intToFloat defense) / 5.0)))
+  toPositive(defensivePS - toPositive (floor ((fromIntegral(attackPower * attack) * attackStab * efectiveness * critValue / fromIntegral defense) / 5.0)))
 
 divideIfBurned :: Maybe PokemonStatus -> Int -> Int
 divideIfBurned (Just Burned) attack = multiplyAndFloor attack 0.5
