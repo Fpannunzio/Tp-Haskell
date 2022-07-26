@@ -7,6 +7,7 @@ import Graphics.Gloss.Interface.Pure.Game
 import Game
 import Types
 import Random
+import Data.Char(isDigit, digitToInt)
 
 simpleEfectiveness :: Float
 simpleEfectiveness = 1.0
@@ -407,43 +408,10 @@ transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
       Running -> processAction game $ Movement $ cellCordToAttack $ mousePosAsCellCoord mousePos
       GameOver _ -> initialGame (head (getSeeds 1 game))
       _ -> game {gameState = Running}
-transformGame (EventKey (Char '1') Up _ _) game =
+transformGame (EventKey (Char c) Up _ _) game =
     case gameState game of
-      Running -> processAction game $ Change 0
+      Running -> if isDigit c then processAction game $ Change (digitToInt c - 1) else game
       GameOver _ -> initialGame (head (getSeeds 1 game))
       _ -> game
-transformGame (EventKey (Char '2') Up _ _) game =
-    case gameState game of
-      Running -> processAction game $ Change 1
-      GameOver _ -> initialGame (head (getSeeds 1 game))
-      _ -> game
-transformGame (EventKey (Char '3') Up _ _) game =
-    case gameState game of
-      Running -> processAction game $ Change 2
-      GameOver _ -> initialGame (head (getSeeds 1 game))
-      _ -> game
-transformGame (EventKey (Char '4') Up _ _) game =
-    case gameState game of
-      Running -> processAction game $ Change 3
-      GameOver _ -> initialGame (head (getSeeds 1 game))
-      _ -> game
-transformGame (EventKey (Char '5') Up _ _) game =
-    case gameState game of
-      Running -> processAction game $ Change 4
-      GameOver _ -> initialGame (head (getSeeds 1 game))
-      _ -> game
-transformGame (EventKey (Char '6') Up _ _) game =
-    case gameState game of
-      Running -> processAction game $ Change 5
-      GameOver _ -> initialGame (head (getSeeds 1 game))
-      _ -> game
-      -- TODO paramertrizr char
--- transformGame (EventKey (Char c) Up _ _) game =
---     case gameState game of
---       Running -> if validChar c then processAction game $ Change charToChange else game
---       GameOver _ -> initialGame (head (getSeeds 1 game))
---       _ -> game
+
 transformGame _ game = game
-    -- case gameState game of
-    --   InitialScreen -> game {gameState = Running}
-    --   _ -> game

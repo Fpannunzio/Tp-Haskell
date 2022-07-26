@@ -62,15 +62,6 @@ appendLog log game =
       actions = log : actionsLogged
     }
 
-preppendLog :: ActionLog -> Game -> Game
-preppendLog log game =
-  let 
-    actionsLogged = actions game
-  in
-  game {
-      actions = actionsLogged ++ [log]
-    }
-
 initialGame :: Int -> Game
 initialGame seed = Game { 
                     firstPlayer = Ash
