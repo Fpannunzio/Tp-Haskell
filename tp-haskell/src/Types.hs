@@ -24,6 +24,7 @@ data ActionLogParams =
     effectiveness :: Float,
     isCrit :: Bool} |
   ChangeLogParams {
+    defeated :: Bool,
     previousPokemon :: String } |
   StatusLogParams {
     statusLog :: PokemonStatus
@@ -89,6 +90,8 @@ data PokemonMov = PokemonMov {
   ,  pokType :: PokemonType
   ,  movParams :: MovParams
 } deriving (Eq, Show)
+
+type PokemonMovPair = (Int, PokemonMov)
 
 type PokemonMovs = S.Seq PokemonMov
 

@@ -3,6 +3,7 @@ import Types
 import Random
 import Data.Sequence ( index )
 data Game = Game { firstPlayer :: Player
+                 , currentPlayer :: Player
                  , ashTeam :: PokemonTeam
                  , garyTeam :: PokemonTeam
                  , ashPokemon :: Int
@@ -27,19 +28,12 @@ cellWidth = fromIntegral screenWidth / fromIntegral n
 cellHeight :: Float
 cellHeight = fromIntegral screenHeight / (fromIntegral n * 2.0)
 
-
 getSeeds :: Int -> Game -> [Int]
 getSeeds amount game = take amount (seeds game)
 
-getSeed :: Game -> Int
-getSeed game = head (seeds game)
-
-removeSeed :: Game -> Game
-removeSeed game = 
-  game {
-    seeds = tail (seeds game)
-  }
-
+getSeed :: Game -> (Int, Game)
+getSeed game = (head (seeds game), game {seeds = tail (seeds game)})
+ 
 getPlayerPokemonIndex :: Player -> Game -> Int
 getPlayerPokemonIndex Ash game = ashPokemon game
 getPlayerPokemonIndex Gary game = garyPokemon game
@@ -68,8 +62,19 @@ appendLog log game =
       actions = log : actionsLogged
     }
 
+preppendLog :: ActionLog -> Game -> Game
+preppendLog log game =
+  let 
+    actionsLogged = actions game
+  in
+  game {
+      actions = actionsLogged ++ [log]
+    }
+
 initialGame :: Int -> Game
-initialGame seed = Game { firstPlayer = Ash
+initialGame seed = Game { 
+                    firstPlayer = Ash
+                   , currentPlayer = Ash
                    , ashTeam = generatePokemonTeamAsh
                    , garyTeam = generatePokemonTeamGary
                    , ashPokemon = 0

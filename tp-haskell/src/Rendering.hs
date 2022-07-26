@@ -167,10 +167,11 @@ renderAttackLog pokemonName attack failed crit effectivenessValue=
     (if failed then " but failed."
     else renderEffectiveness effectivenessValue ++ renderCrit crit)
 
-renderChangingLog :: Player -> String -> String -> Picture 
-renderChangingLog player pokemonName oldPokemonName =
-    text $
-     show player ++ " cambia a " ++ oldPokemonName ++ ". Es el turno de " ++ pokemonName
+renderChangingLog :: Player -> String -> String -> Bool -> Picture 
+renderChangingLog player pokemonName oldPokemonName False = 
+  text $ show player ++ " cambia a " ++ oldPokemonName ++ ". Es el turno de " ++ pokemonName
+renderChangingLog player pokemonName oldPokemonName True =
+    text $  oldPokemonName ++ " de " ++ show player ++ " ya no puede seguir. Sale " ++ pokemonName
 
 renderStatusLog ::  String -> PokemonStatus -> Picture 
 renderStatusLog pokemonName status =
@@ -193,7 +194,7 @@ renderActionLog height action =
     $ color (playerColor player)
     $ case logParameters of
       AttackLogParams attackName attackMissed efect crit-> renderAttackLog pokemon attackName attackMissed crit efect
-      ChangeLogParams previousPokemon-> renderChangingLog player pokemon previousPokemon
+      ChangeLogParams defeated previousPokemon-> renderChangingLog player pokemon previousPokemon defeated
       StatusLogParams status-> renderStatusLog pokemon status
 
 renderGameActions :: Float -> [ActionLog] -> [Picture]
