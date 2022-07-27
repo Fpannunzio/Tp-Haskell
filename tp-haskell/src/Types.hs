@@ -95,7 +95,7 @@ type PokemonMovPair = (Int, PokemonMov)
 
 type PokemonMovs = S.Seq PokemonMov
 
-type Position = (Float, Float)
+
 data Pokemon = Pokemon { name :: String
                       ,  pokedexNumber :: Int
                       ,  stats :: PokemonStatistics

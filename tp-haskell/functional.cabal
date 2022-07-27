@@ -59,6 +59,8 @@ executable functional
                      , Rendering
                      , Types
                      , Random
+                     , Colors
+                     , Positions
   
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:    
