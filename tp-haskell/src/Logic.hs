@@ -11,28 +11,6 @@ import Data.Char(isDigit, digitToInt)
 
 simpleEfectiveness :: Float
 simpleEfectiveness = 1.0
--- Si el segundo equipo perdio gana el primer jugador siempre
--- Si el primero perdio y no sali por el primer caso es que el segundo no lo es, gana el segundo jugador
--- Sino sigue igual
-
-checkPlayerWon :: Bool -> Bool -> Player -> Player -> Game -> Game
-checkPlayerWon _ False firstPlayer _ game = game { gameState = GameOver firstPlayer}
-checkPlayerWon False _ _ secondPlayer game = game { gameState = GameOver secondPlayer}
-checkPlayerWon _ _ _ _ game = game {gameState = ActionLogging}
-
--- Fijarse si alguna de las dos colecciones es vacias y en caso de serlo poner gameState en gameOver
-checkStillFighting :: Game -> Game
-checkStillFighting game =
-    let
-      at = ashTeam game
-      gt = garyTeam game
-      ashStillFighting = getFirstAlive at < invalidPokemon
-      garyStillFighting = getFirstAlive gt < invalidPokemon
-    in
-    case firstPlayer game of
-      Ash -> checkPlayerWon ashStillFighting garyStillFighting Ash Gary game
-      Gary -> checkPlayerWon garyStillFighting ashStillFighting Gary Ash game
-
 
 checkDefeated :: Pokemon -> Bool
 checkDefeated pokemon = currentPs (stats pokemon) == 0x0
@@ -57,7 +35,8 @@ swapPlayerDefeatedPokemon player game =
     if checkDefeated pokemon && firstAlivePokemon < invalidPokemon then
       logChange player True pokemon
       $ updatePlayerCurrentPokemon player firstAlivePokemon game
-    -- TODO: Si esta defeated pero no se cumple la segunda condicion gano y listo
+    else if checkDefeated pokemon && firstAlivePokemon >= invalidPokemon then
+      game { gameState = GameOver (otherPlayer player), currentPlayer = player}
     else
       game {currentPlayer = player}
 
@@ -327,8 +306,6 @@ logChange player isDefeated oldPokemon game =
     changeLog = ActionLog {playerInvolved = player, pokemonName = name newPokemon, logParams = ChangeLogParams {defeated = isDefeated, previousPokemon = name oldPokemon} }
   in
     appendLog changeLog game
-    -- if isDefeated then appendLog changeLog game
-    -- else appendLog changeLog game
 
 resetActions :: Game -> Game
 resetActions game = game {actions = []}
@@ -338,11 +315,14 @@ getAttacks ashAttackPair garyAttackPair game
   | firstPlayer game == Ash = (ashAttackPair, garyAttackPair)
   | otherwise = (garyAttackPair, ashAttackPair)
 
+setActionLogging :: Game -> Game
+setActionLogging game = if gameState game == Running then game {gameState = ActionLogging} else game
+
 battle :: Game -> Int -> Game
 battle game ashMovNumber
     -- | not (isCoordCorrect garyAttackNumber) = game --TODO Sacar el pokemon de Gary
   | stillHasMoves apAttack =
-    checkStillFighting
+      setActionLogging
       $ applyStatusEffect
       $ fight (otherPlayer fastestPlayer) sMovPair
       $ fight fastestPlayer fMovPair
@@ -368,8 +348,7 @@ change game changeNumber =
     gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
     newGame = removedSeedGame {firstPlayer = Gary, currentPlayer = Gary, ashPokemon = changeNumber}
   in
-    checkStillFighting
-    $ applyStatusEffect
+   applyStatusEffect
     $ fight Gary (garyAttackNumber, gpAttack)
     $ logChange Ash False ashOldPokemon
     $ resetActions newGame
