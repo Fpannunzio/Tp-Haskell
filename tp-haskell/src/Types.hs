@@ -2,7 +2,7 @@ module Types where
 import Data.Array
 import qualified Data.Sequence as S
 
-data PokemonType = Normal | Fuego | Agua | Hierba deriving (Eq, Show)
+data PokemonType = Normal | Fuego | Agua | Hierba | Electrico | Tierra | Volador | Roca deriving (Eq, Show)
 
 type PokemonAttributes = [PokemonType]
 data PokemonStatistics = PokemonStatistics
@@ -116,12 +116,31 @@ otherPlayer Gary = Ash
 data Action  = Movement Int | Change Int 
 
 typeTable :: PokemonType -> PokemonType -> Float
-typeTable Fuego Agua = 0.5
 typeTable Fuego Hierba = 2.0
-typeTable Agua Hierba = 0.5
+typeTable Fuego Agua = 0.5
 typeTable Agua Fuego = 2.0
-typeTable Hierba Fuego = 0.5
+typeTable Agua Tierra = 2.0
+typeTable Agua Hierba = 0.5
+typeTable Agua Electrico = 0.5
+typeTable Agua Roca = 2.0
+typeTable Electrico Agua = 2.0
+typeTable Electrico Volador = 2.0
+typeTable Electrico Tierra = 0
+typeTable Tierra Electrico = 2.0
+typeTable Tierra Roca = 2.0
+typeTable Tierra Volador = 0
+typeTable Roca Volador = 2.0
+typeTable Roca Fuego = 2.0
+typeTable Roca Agua = 0.5
+typeTable Roca Hierba = 0.5
+typeTable Volador Tierra = 2.0
+typeTable Volador Hierba = 2.0
+typeTable Volador Roca = 0.5
 typeTable Hierba Agua = 2.0
+typeTable Hierba Tierra = 2.0
+typeTable Hierba Roca = 2.0
+typeTable Hierba Volador = 0.5
+typeTable Hierba Fuego = 0.5
 typeTable _ _ = 1.0
 
 multiplyAndFloor :: Int -> Float -> Int

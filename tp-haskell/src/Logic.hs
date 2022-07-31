@@ -328,8 +328,8 @@ change changeNumber player game =
   Ash -> game {firstPlayer = Gary, currentPlayer = Gary, ashPokemon = changeNumber}
   Gary -> game {firstPlayer = Ash, currentPlayer = Ash, ashPokemon = changeNumber} 
   
-actionChange :: Int -> Player -> PokemonMovPair -> Game -> Game
-actionChange changeNumber player movPair game = fight (otherPlayer player) movPair $ change changeNumber player game
+actionChange :: Int -> PokemonMovPair -> Game -> Game
+actionChange changeNumber movPair game = fight Gary movPair $ change changeNumber Ash game
 
 actionFight :: Int -> PokemonMovPair -> Game -> Game
 actionFight ashMovNumber garyAttackPair game =
@@ -355,7 +355,7 @@ battle game action =
     $ applyStatusEffect
     $ case action of
       (Movement movNumber) -> actionFight movNumber (garyAttackNumber, gpAttack)
-      (Change changeNumber) -> actionChange changeNumber Ash (garyAttackNumber, gpAttack)
+      (Change changeNumber) -> actionChange changeNumber (garyAttackNumber, gpAttack)
     $ resetActions removedSeedGame
 
 isMovCorrect :: Int -> Game -> Bool

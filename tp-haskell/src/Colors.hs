@@ -26,3 +26,7 @@ pokemonTypeColor Normal = greyN 0.5
 pokemonTypeColor Fuego = makeColorI 255 0 0 255
 pokemonTypeColor Agua = makeColorI 0 0 255 255
 pokemonTypeColor Hierba = makeColorI 0 255 0 255
+pokemonTypeColor Electrico = makeColorI 255 255 0 255
+pokemonTypeColor Tierra = makeColorI 153 106 20 255
+pokemonTypeColor Roca = makeColorI 145 141 129 255
+pokemonTypeColor Volador = makeColorI 199 255 240 255

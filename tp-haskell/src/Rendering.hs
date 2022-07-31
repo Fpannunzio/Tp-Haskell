@@ -87,10 +87,11 @@ gameFightingPicture ashSprites garySprites game =
 
 renderEffectiveness :: Float -> String
 renderEffectiveness effectiveness 
-  | effectiveness == 4.0 = " es superefectivo."
-  | effectiveness == 2.0 = " es muy efectivo."
-  | effectiveness == 0.5 = " es poco efectvo."
-  | effectiveness == 0.25 = "es muy poco efectivo."
+  | effectiveness == 4.0 = ", es superefectivo."
+  | effectiveness == 2.0 = ", es muy efectivo."
+  | effectiveness == 0.5 = ", es poco efectvo."
+  | effectiveness == 0.25 = ", es muy poco efectivo."
+  | effectiveness == 0.0 = ", pero el rival es inmune."
   | otherwise = ""
 
 renderCrit :: Bool -> String
