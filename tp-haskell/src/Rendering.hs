@@ -65,8 +65,16 @@ getPokemonSprite sprites pokemon =
   Blank (S.lookup (pokedexNumber pokemon - 1) sprites)
 
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
-gameRunningPicture :: Sprites -> Sprites -> Game -> Picture
-gameRunningPicture ashSprites garySprites game =
+gameFightingPicture :: Sprites -> Sprites -> Game -> Picture
+gameFightingPicture ashSprites garySprites game =
+  let
+    ashPokemon = getPlayerPokemon Ash game
+    garyPokemon = getPlayerPokemon Gary game
+    ashTeam = getPlayerTeam Ash game
+    garyTeam = getPlayerTeam Gary game
+    ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
+    garyPokemonSprite = getPokemonSprite garySprites garyPokemon
+  in
     pictures [
               renderPokemon Gary garyPokemon garyPokemonSprite
             , renderPokemon Ash ashPokemon ashPokemonSprite
@@ -75,13 +83,7 @@ gameRunningPicture ashSprites garySprites game =
             , pokemonAttacksBoard (movs ashPokemon)
             , color boardGridColor boardGrid
              ]
-    where
-          ashPokemon = getPlayerPokemon Ash game
-          garyPokemon = getPlayerPokemon Gary game
-          ashTeam = getPlayerTeam Ash game
-          garyTeam = getPlayerTeam Gary game
-          ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
-          garyPokemonSprite = getPokemonSprite garySprites garyPokemon
+          
 
 renderEffectiveness :: Float -> String
 renderEffectiveness effectiveness 
@@ -137,7 +139,7 @@ renderGameActions _ []  = []
 renderGameActions position (aLog:aLogs)  = renderActionLog position aLog : renderGameActions (position - logPosition) aLogs 
 
 renderBottomPicture :: State -> Game -> Picture
-renderBottomPicture Running game = pictures [ 
+renderBottomPicture Fighting game = pictures [ 
               pokemonAttacksBoard (movs (getPlayerPokemon Ash game))
             , color boardGridColor boardGrid]
 renderBottomPicture ActionLogging game = pictures [
@@ -147,6 +149,14 @@ renderBottomPicture ActionLogging game = pictures [
 -- Deberia mostrar, las dos fotos de los pokemones, su nombre, su vida y los ataques para elegir
 gamePicture :: State -> Sprites -> Sprites -> Game -> Picture
 gamePicture state ashSprites garySprites game =
+  let
+    ashPokemon = getPlayerPokemon Ash game
+    garyPokemon = getPlayerPokemon Gary game
+    ashTeam = getPlayerTeam Ash game
+    garyTeam = getPlayerTeam Gary game
+    ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
+    garyPokemonSprite = getPokemonSprite garySprites garyPokemon
+  in
     pictures [
               renderPokemon Gary garyPokemon garyPokemonSprite
             , renderPokemon Ash ashPokemon ashPokemonSprite
@@ -154,13 +164,7 @@ gamePicture state ashSprites garySprites game =
             , renderAlivePokemon Ash ashTeam
             , renderBottomPicture state game
              ]
-    where
-          ashPokemon = getPlayerPokemon Ash game
-          garyPokemon = getPlayerPokemon Gary game
-          ashTeam = getPlayerTeam Ash game
-          garyTeam = getPlayerTeam Gary game
-          ashPokemonSprite = getPokemonSprite ashSprites ashPokemon
-          garyPokemonSprite = getPokemonSprite garySprites garyPokemon
+          
 
 renderPokemonName :: Float -> Color -> String -> Picture
 renderPokemonName position currentColor name =
@@ -274,14 +278,16 @@ pokemonAttacksBoard pokeMovs = pictures $ toList (S.zipWith renderPokemonAttack 
 renderWinner :: Player -> Picture
 renderWinner winner = uncurry translate winnerPosition
                      $ color (playerColor winner)
-                     $ text (show winner ++ " wins")
+                     $ text (show winner ++ " es el ganador!")
 
 gameAsPicture :: Picture -> Sprites -> Sprites -> Game -> Picture
-gameAsPicture gameLogo ashSprites garySprites game = translate (fromIntegral screenWidth * (-0.5))
-                               (fromIntegral screenHeight * (-0.5))
-                               frame
-    where frame = case gameState game of
-                    InitialScreen -> renderInitialState gameLogo
-                    Running -> gamePicture Running ashSprites garySprites game
-                    ActionLogging -> gamePicture ActionLogging ashSprites garySprites game
-                    GameOver winner -> renderWinner winner
+gameAsPicture gameLogo ashSprites garySprites game = 
+  let 
+     frame = case gameState game of
+              InitialScreen -> renderInitialState gameLogo
+              Fighting -> gamePicture Fighting ashSprites garySprites game
+              ActionLogging -> gamePicture ActionLogging ashSprites garySprites game
+              GameOver winner -> renderWinner winner
+  in
+  uncurry translate adjustedScreenPosition frame
+    

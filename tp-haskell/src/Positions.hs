@@ -6,6 +6,9 @@ import qualified Data.Sequence as S
 
 type Position = (Float, Float)
 
+adjustedScreenPosition :: Position
+adjustedScreenPosition = (fromIntegral screenWidth * (-0.5), fromIntegral screenHeight * (-0.5))
+
 middleOfScreen :: Float
 middleOfScreen = fromIntegral screenHeight * 0.5 :: Float
 
@@ -56,7 +59,7 @@ statusPosition :: Float
 statusPosition = fromIntegral screenWidth * 0.2
 
 winnerPosition :: Position
-winnerPosition = (0.0, fromIntegral screenHeight * 0.45)
+winnerPosition = (0.20, fromIntegral screenHeight * 0.45)
 
 attackPositions :: S.Seq Position
 attackPositions = S.fromList [(cellWidth * 0.1, cellHeight * 1.3), (cellWidth * 1.1, cellHeight * 1.3), (cellWidth * 0.1, cellHeight * 0.3), (cellWidth * 1.1, cellHeight * 0.3)]

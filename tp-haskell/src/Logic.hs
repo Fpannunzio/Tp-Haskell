@@ -316,7 +316,7 @@ getAttacks ashAttackPair garyAttackPair game
   | otherwise = (garyAttackPair, ashAttackPair)
 
 setActionLogging :: Game -> Game
-setActionLogging game = if gameState game == Running then game {gameState = ActionLogging} else game
+setActionLogging game = if gameState game == Fighting then game {gameState = ActionLogging} else game
 
 change :: Int -> Player -> Game -> Game
 change changeNumber player game =
@@ -396,12 +396,12 @@ mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / ce
 
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
-      Running -> processAction game $ Movement $ cellCordToAttack $ mousePosAsCellCoord mousePos
+      Fighting -> processAction game $ Movement $ cellCordToAttack $ mousePosAsCellCoord mousePos
       GameOver _ -> initialGame (head (getSeeds 1 game))
-      _ -> game {gameState = Running}
+      _ -> game {gameState = Fighting}
 transformGame (EventKey (Char c) Up _ _) game =
     case gameState game of
-      Running -> if isDigit c then processAction game $ Change (digitToInt c - 1) else game
+      Fighting -> if isDigit c then processAction game $ Change (digitToInt c - 1) else game
       GameOver _ -> initialGame (head (getSeeds 1 game))
       _ -> game
 transformGame _ game = game

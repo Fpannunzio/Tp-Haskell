@@ -3,7 +3,7 @@ import Types
 import Random
 import qualified Data.Sequence as S
 
-data State = InitialScreen | Running | ActionLogging | GameOver Player deriving (Eq, Show)
+data State = InitialScreen | Fighting | ActionLogging | GameOver Player deriving (Eq, Show)
 
 data Game = Game { firstPlayer :: Player
                  , currentPlayer :: Player
