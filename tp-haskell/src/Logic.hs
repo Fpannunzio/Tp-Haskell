@@ -140,7 +140,7 @@ processBuff player pokemon pokemonMov game =
     pokemonIndex = getPlayerPokemonIndex player game
     team = getPlayerTeam player game
   in
-  logAttackDmg player pokemonMov False simpleEfectiveness False $
+  logAttackDmg player pokemonMov False False simpleEfectiveness $
   updatePlayerTeam player (S.update pokemonIndex (boostPokemon pokemon pokemonMov) team) game
 
 toPositive :: Int -> Int
@@ -181,12 +181,12 @@ processAttack apStats apStatus dpStats pokemonMov isCrit hasStab efectiveness =
     }
 
 
-logAttackDmg :: Player -> PokemonMov -> Bool -> Float-> Bool -> Game -> Game
-logAttackDmg player pokemonMov attackFailedLog effectivenessLog critLog game =
+logAttackDmg :: Player -> PokemonMov -> Bool -> Bool -> Float -> Game -> Game
+logAttackDmg player pokemonMov attackFailedLog critLog effectivenessLog game =
   let
     currentPokemon = getPlayerPokemon player game
     attackLog = ActionLog {playerInvolved = player, pokemonName = name currentPokemon,
-    logParams = AttackLogParams {attackLogged = attackName pokemonMov, attackFailed = attackFailedLog, effectiveness = effectivenessLog, isCrit = critLog}
+    logParams = AttackLogParams {attackLogged = attackName pokemonMov, attackFailed = attackFailedLog, isCrit = critLog, effectiveness = effectivenessLog}
     }
   in
     appendLog attackLog game
@@ -208,7 +208,7 @@ processDmg player attackingPokemon defendingPokemon pokemonAttack probability ga
     hasStab = calculateStab attackingPokemonTypes attackType
     efectiveness = calculateEffectiveness defendingPokemonTypes attackType
   in
-    logAttackDmg player pokemonAttack False efectiveness isCrit $
+    logAttackDmg player pokemonAttack False isCrit efectiveness $
     updatePlayerTeam defendingPlayer (S.update defendingPokemonIndex (defendingPokemon{stats = processAttack apStats apStatus dpStats pokemonAttack isCrit hasStab efectiveness}) defendingTeam) game
 
 applyStatus :: Pokemon -> PokemonMov -> Pokemon
@@ -224,7 +224,7 @@ processStatus player defendingPokemon pokemonMov game =
     defendingPokemonIndex = getPlayerPokemonIndex defendingPlayer game
     defendingTeam = getPlayerTeam defendingPlayer game
   in
-  logAttackDmg player pokemonMov False simpleEfectiveness False $
+  logAttackDmg player pokemonMov False False simpleEfectiveness $
   updatePlayerTeam defendingPlayer (S.update defendingPokemonIndex (applyStatus defendingPokemon pokemonMov) defendingTeam) game
 
 checkIfHit :: Float -> PokemonMov -> Bool
@@ -250,7 +250,7 @@ processMov player pokemonMov game
       Dmg ->  processDmg player attackingPokemon defendingPokemon pokemonMov probability newGame
       Status -> processStatus player defendingPokemon pokemonMov newGame
   | not (checkIfHit probability pokemonMov) =
-    logAttackDmg player pokemonMov False simpleEfectiveness False newGame
+    logAttackDmg player pokemonMov True False simpleEfectiveness newGame
   | not paralized =
     logParalized player newGame
   | otherwise = newGame
@@ -318,43 +318,53 @@ getAttacks ashAttackPair garyAttackPair game
 setActionLogging :: Game -> Game
 setActionLogging game = if gameState game == Running then game {gameState = ActionLogging} else game
 
-battle :: Game -> Int -> Game
-battle game ashMovNumber
-    -- | not (isCoordCorrect garyAttackNumber) = game --TODO Sacar el pokemon de Gary
-  | stillHasMoves apAttack =
-      setActionLogging
-      $ applyStatusEffect
-      $ fight (otherPlayer fastestPlayer) sMovPair
-      $ fight fastestPlayer fMovPair
-      $ resetActions newGame
-  | otherwise = game
-  where
-    (seed, removedSeedGame) = getSeed game
-    ashPokemon = getPlayerPokemon Ash removedSeedGame
-    apAttack = checkMaybeAttack (S.lookup ashMovNumber (movs ashPokemon))
-    garyPokemon = getPlayerPokemon Gary removedSeedGame
-    garyMovNumber = garyAttackPick garyPokemon seed
-    gpAttack = checkMaybeAttack (S.lookup garyMovNumber (movs garyPokemon))
-    (fastestPlayer, newGame) = checkFirstAttack ashPokemon garyPokemon removedSeedGame
-    (fMovPair, sMovPair) = getAttacks (ashMovNumber, apAttack) (garyMovNumber, gpAttack) newGame
+change :: Int -> Player -> Game -> Game
+change changeNumber player game =
+  let 
+    oldPokemon = getPlayerPokemon player game
+  in
+  logChange player False oldPokemon
+  $ case player of
+  Ash -> game {firstPlayer = Gary, currentPlayer = Gary, ashPokemon = changeNumber}
+  Gary -> game {firstPlayer = Ash, currentPlayer = Ash, ashPokemon = changeNumber} 
+  
+actionChange :: Int -> Player -> PokemonMovPair -> Game -> Game
+actionChange changeNumber player movPair game = fight (otherPlayer player) movPair $ change changeNumber player game
 
-change :: Game -> Int -> Game
-change game changeNumber =
+actionFight :: Int -> PokemonMovPair -> Game -> Game
+actionFight ashMovNumber garyAttackPair game =
+  let 
+    garyPokemon = getPlayerPokemon Gary game
+    ashPokemon = getPlayerPokemon Ash game
+    apAttack = checkMaybeAttack (S.lookup ashMovNumber (movs ashPokemon))
+    (fastestPlayer, newGame) = checkFirstAttack ashPokemon garyPokemon game
+    (fMovPair, sMovPair) = getAttacks (ashMovNumber, apAttack) garyAttackPair newGame
+  in
+  fight (otherPlayer fastestPlayer) sMovPair
+  $ fight fastestPlayer fMovPair newGame
+
+battle :: Game -> Action -> Game
+battle game action =
   let
     (seed, removedSeedGame) = getSeed game
-    ashOldPokemon = getPlayerPokemon Ash removedSeedGame
     garyPokemon = getPlayerPokemon Gary removedSeedGame
     garyAttackNumber = garyAttackPick garyPokemon seed
     gpAttack = checkMaybeAttack (S.lookup garyAttackNumber (movs garyPokemon))
-    newGame = removedSeedGame {firstPlayer = Gary, currentPlayer = Gary, ashPokemon = changeNumber}
   in
-   applyStatusEffect
-    $ fight Gary (garyAttackNumber, gpAttack)
-    $ logChange Ash False ashOldPokemon
-    $ resetActions newGame
+    setActionLogging
+    $ applyStatusEffect
+    $ case action of
+      (Movement movNumber) -> actionFight movNumber (garyAttackNumber, gpAttack)
+      (Change changeNumber) -> actionChange changeNumber Ash (garyAttackNumber, gpAttack)
+    $ resetActions removedSeedGame
 
-isMovCorrect :: Int -> Bool
-isMovCorrect x = x >= 0 && x <=3 -- inRange?
+isMovCorrect :: Int -> Game -> Bool
+isMovCorrect movNumber game = 
+  let 
+    ashPokemon = getPlayerPokemon Ash game
+    apAttack = checkMaybeAttack (S.lookup movNumber (movs ashPokemon))
+  in
+   movNumber >= 0 && movNumber <=3 && stillHasMoves apAttack
 
 isChangeCorrect :: Int -> Game -> Bool
 isChangeCorrect changeNumber game =
@@ -373,14 +383,16 @@ cellCordToAttack cellCord =
     (1, 0) -> 3
     _ -> 4
 
+validAction :: Action -> Game -> Bool
+validAction (Change changeNumber) game = isChangeCorrect changeNumber game
+validAction (Movement movNumber) game = isMovCorrect movNumber game
+
 processAction:: Game -> Action -> Game
-processAction game (Movement movNumber) = if isMovCorrect movNumber then battle game movNumber else game
-processAction game (Change changeNumber) = if isChangeCorrect changeNumber game then change game changeNumber else game
+processAction game action = if validAction action game then battle game action else game
 
 mousePosAsCellCoord :: (Float, Float) -> (Int, Int)
 mousePosAsCellCoord (x, y) = (floor ((x + (fromIntegral screenWidth * 0.5)) / cellWidth),
                               floor ((y + (fromIntegral screenHeight * 0.5)) / cellHeight))
-
 
 transformGame (EventKey (MouseButton LeftButton) Up _ mousePos) game =
     case gameState game of
@@ -392,5 +404,4 @@ transformGame (EventKey (Char c) Up _ _) game =
       Running -> if isDigit c then processAction game $ Change (digitToInt c - 1) else game
       GameOver _ -> initialGame (head (getSeeds 1 game))
       _ -> game
-
 transformGame _ game = game

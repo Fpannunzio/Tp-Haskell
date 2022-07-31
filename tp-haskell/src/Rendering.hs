@@ -99,7 +99,7 @@ renderAttackLog :: String -> String -> Bool -> Bool -> Float -> Picture
 renderAttackLog pokemonName attack failed crit effectivenessValue =
     text $
     pokemonName ++ " uso " ++ attack ++
-    (if failed then " but failed."
+    (if failed then ", pero fallo!"
     else renderEffectiveness effectivenessValue ++ renderCrit crit)
 
 renderChangingLog :: Player -> String -> String -> Bool -> Picture 
@@ -128,7 +128,7 @@ renderActionLog height action =
     $ uncurry scale defaultTextScale
     $ color (playerColor player)
     $ case logParameters of
-      AttackLogParams attackName attackMissed efect crit-> renderAttackLog pokemon attackName attackMissed crit efect
+      AttackLogParams attackName attackMissed crit effect-> renderAttackLog pokemon attackName attackMissed crit effect
       ChangeLogParams defeated previousPokemon-> renderChangingLog player pokemon previousPokemon defeated
       StatusLogParams status-> renderStatusLog pokemon status
 
