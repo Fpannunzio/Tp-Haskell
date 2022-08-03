@@ -123,7 +123,7 @@ generatePokemonTeamAsh = S.fromList [
     PokemonMov {attackName = "Desarrollar", movType = Buff, movsLeft = 10, accuracy = 1.0, pokType = Hierba, movParams = BuffMov {multiplier = 1.5, upgradedStats = [Defense, SpecialDefense]}}
   , PokemonMov {attackName = "Rayo Solar", movType = Dmg, movsLeft = 5, accuracy = 1.0, pokType = Hierba, movParams = DmgMov {power = 65, dmgType = Special}}
   , PokemonMov {attackName = "Envenenar", movType = Status, movsLeft = 10, accuracy = 1.0, pokType = Hierba, movParams = StatusMov {statusType = Poisoned}}
-  , PokemonMov {attackName = "Terremoto", movType = Dmg, movsLeft = 5, accuracy = 0.7, pokType = Tierra, movParams = DmgMov {power = 75, dmgType = Physic}}
+  , PokemonMov {attackName = "Terremoto", movType = Dmg, movsLeft = 5, accuracy = 0.7, pokType = Tierra, movParams = DmgMov {power = 75, dmgType = Physic}}]
   },
   Pokemon {
     name = "Snorlax"
