@@ -113,34 +113,46 @@ otherPlayer :: Player -> Player
 otherPlayer Ash = Gary
 otherPlayer Gary = Ash
 
-data Action  = Movement Int | Change Int 
+data Action  = Movement Int | Change Int
+
+simpleEfectiveness :: Float
+simpleEfectiveness = 1.0
+
+strong :: Float
+strong = 2.0
+
+weak :: Float
+weak = 0.5
+
+inmune :: Float
+inmune = 0
 
 typeTable :: PokemonType -> PokemonType -> Float
-typeTable Fuego Hierba = 2.0
-typeTable Fuego Agua = 0.5
-typeTable Agua Fuego = 2.0
-typeTable Agua Tierra = 2.0
-typeTable Agua Hierba = 0.5
-typeTable Agua Electrico = 0.5
-typeTable Agua Roca = 2.0
-typeTable Electrico Agua = 2.0
-typeTable Electrico Volador = 2.0
-typeTable Electrico Tierra = 0
-typeTable Tierra Electrico = 2.0
-typeTable Tierra Roca = 2.0
-typeTable Tierra Volador = 0
-typeTable Roca Volador = 2.0
-typeTable Roca Fuego = 2.0
-typeTable Roca Agua = 0.5
-typeTable Roca Hierba = 0.5
-typeTable Volador Tierra = 2.0
-typeTable Volador Hierba = 2.0
-typeTable Volador Roca = 0.5
-typeTable Hierba Agua = 2.0
-typeTable Hierba Tierra = 2.0
-typeTable Hierba Roca = 2.0
-typeTable Hierba Volador = 0.5
-typeTable Hierba Fuego = 0.5
+typeTable Fuego Hierba = strong
+typeTable Fuego Agua = weak
+typeTable Agua Fuego = strong
+typeTable Agua Tierra = strong
+typeTable Agua Hierba = weak
+typeTable Agua Electrico = weak
+typeTable Agua Roca = strong
+typeTable Electrico Agua = strong
+typeTable Electrico Volador = strong
+typeTable Electrico Tierra = inmune
+typeTable Tierra Electrico = strong
+typeTable Tierra Roca = strong
+typeTable Tierra Volador = inmune
+typeTable Roca Volador = strong
+typeTable Roca Fuego = strong
+typeTable Roca Agua = weak
+typeTable Roca Hierba = weak
+typeTable Volador Tierra = strong
+typeTable Volador Hierba = strong
+typeTable Volador Roca = weak
+typeTable Hierba Agua = strong
+typeTable Hierba Tierra = strong
+typeTable Hierba Roca = strong
+typeTable Hierba Volador = weak
+typeTable Hierba Fuego = weak
 typeTable _ _ = 1.0
 
 multiplyAndFloor :: Int -> Float -> Int
